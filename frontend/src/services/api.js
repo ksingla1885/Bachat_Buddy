@@ -2,7 +2,9 @@ import axios from "axios";
 
 // ✅ Create axios instance
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || "http://localhost:5000/api",
+  // Default to backend port 5001 (matches backend/server.js). If you use a different port
+  // set VITE_API_URL in the frontend environment (.env) to override.
+  baseURL: import.meta.env.VITE_API_URL || "http://localhost:5001/api",
   headers: {
     "Content-Type": "application/json",
   },

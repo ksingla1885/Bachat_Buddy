@@ -51,13 +51,14 @@ exports.createTransaction = async (req, res) => {
 
     // Update wallet balance(s)
     if (type === 'Transfer') {
-      const [fromWallet, toWalletDoc] = await Promise.all([
+      const [fromWallet, toWallet] = await Promise.all([
         Wallet.findById(walletId),
         Wallet.findById(toWallet)
       ]);
 
       fromWallet.currentBalance = Number(fromWallet.currentBalance) - numericAmount;
-      toWalletDoc.currentBalance = Number(toWalletDoc.currentBalance) + numericAmount;
+      toWallet.currentBalance = Number(toWallet.currentBalance) + numericAmount;
+      console.log("From Wallet New Balance:", fromWallet.currentBalance);
 
       await Promise.all([
         fromWallet.save(),

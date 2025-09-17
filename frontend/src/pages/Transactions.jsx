@@ -18,17 +18,25 @@ const Transactions = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
 
+  // Fetch wallets once on mount (separate from transactions)
   useEffect(() => {
     fetchWallets();
+  }, []);
+
+  // Fetch transactions when filters or page change
+  useEffect(() => {
     fetchTransactions();
   }, [currentPage, filters]);
 
   const fetchWallets = async () => {
     try {
       const response = await api.getWallets();
-      setWallets(response.data.data.wallets);
+      setWallets(response.data.data.wallets || []);
+      setError('');
     } catch (err) {
-      console.error('Error fetching wallets:', err);
+      console.error('Error fetching wallets:', err.response?.data || err.message || err);
+      setWallets([]);
+      setError(err.response?.data?.message || 'Error fetching wallets');
     }
   };
 
@@ -98,8 +106,7 @@ const Transactions = () => {
   };
 
   const renderTransactionRow = (transaction) => {
-    const fromWallet = wallets.find(w => w._id === transaction.walletId)?.name || 'Unknown';
-    const toWallet = wallets.find(w => w._id === transaction.toWallet)?.name || '';
+    const walletName = wallets.find(w => String(w._id) === String(transaction.walletId))?.name || transaction.walletName || 'Unknown';
 
     return (
       <tr key={transaction._id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
@@ -113,9 +120,7 @@ const Transactions = () => {
           <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
             ${transaction.type === 'Income'
               ? 'bg-green-100 text-green-800'
-              : transaction.type === 'Expense'
-              ? 'bg-red-100 text-red-800'
-              : 'bg-blue-100 text-blue-800'
+              : 'bg-red-100 text-red-800'
             }`}>
             {transaction.type}
           </span>
@@ -128,16 +133,12 @@ const Transactions = () => {
 
         {/* Wallet */}
         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">
-          {transaction.type === 'Transfer'
-            ? `From: ${wallets.find(w => w._id === transaction.walletId)?.name || 'Unknown'} → To: ${wallets.find(w => w._id === transaction.toWallet)?.name || 'Unknown'}`
-            : transaction.walletName || wallets.find(w => w._id === transaction.walletId)?.name || '-'}
+          {walletName}
         </td>
 
         {/* Category */}
         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">
-          {transaction.type === 'Transfer'
-            ? ''
-            : transaction.category || '-'}
+          {transaction.category || '-'}
         </td>
 
         {/* Notes */}
@@ -244,7 +245,6 @@ const Transactions = () => {
               <option value="">All Types</option>
               <option value="Income">Income</option>
               <option value="Expense">Expense</option>
-              <option value="Transfer">Transfer</option>
             </select>
           </div>
 
@@ -284,8 +284,8 @@ const Transactions = () => {
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Date</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Type</th>
               <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Amount</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Category</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Wallet</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Category</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Notes</th>
               <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
             </tr>

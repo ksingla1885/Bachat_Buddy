@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 
 const TransactionForm = ({ onSubmit, wallets, refreshWallets, initialData = null }) => {
   const [isLoading, setIsLoading] = useState(false);
-  const { register, handleSubmit, watch, reset, formState: { errors } } = useForm({
+  const { register, handleSubmit, reset, formState: { errors } } = useForm({
     defaultValues: initialData || {
       type: 'Expense',
       date: new Date().toISOString().split('T')[0]
@@ -17,11 +17,10 @@ const TransactionForm = ({ onSubmit, wallets, refreshWallets, initialData = null
       const payload = {
         type: data.type,
         amount: Number(data.amount),
-        walletId: data.fromWallet,        // ✅ backend expects walletId
+        walletId: data.walletId,        // ✅ backend expects walletId
         notes: data.description || '',    // ✅ map to notes
         date: data.date,
-        ...(data.type !== 'Transfer' && { category: data.category }),
-        ...(data.type === 'Transfer' && { toWallet: data.toWallet })
+        category: data.category
       };
 
       await onSubmit(payload);
@@ -40,11 +39,6 @@ const TransactionForm = ({ onSubmit, wallets, refreshWallets, initialData = null
     }
   };
 
-  const transactionType = watch('type');
-
-  // This function is not used as we're using react-hook-form's handleSubmit
-  // You can safely remove this function as onSubmitForm handles the submission
-
   return (
     <form onSubmit={handleSubmit(onSubmitForm)} className="space-y-4">
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -57,7 +51,6 @@ const TransactionForm = ({ onSubmit, wallets, refreshWallets, initialData = null
           >
             <option value="Income">Income</option>
             <option value="Expense">Expense</option>
-            <option value="Transfer">Transfer</option>
           </select>
         </div>
 
@@ -73,13 +66,11 @@ const TransactionForm = ({ onSubmit, wallets, refreshWallets, initialData = null
           {errors.amount && <p className="text-red-500 text-xs">Amount is required</p>}
         </div>
 
-        {/* From Wallet */}
+        {/* Wallet */}
         <div>
-          <label className="block text-sm font-medium text-gray-700">
-            {transactionType === 'Transfer' ? 'From Wallet' : 'Wallet'}
-          </label>
+          <label className="block text-sm font-medium text-gray-700">Wallet</label>
           <select
-            {...register('fromWallet', { required: true })}
+            {...register('walletId', { required: true })}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary"
           >
             <option value="">Select Wallet</option>
@@ -89,60 +80,26 @@ const TransactionForm = ({ onSubmit, wallets, refreshWallets, initialData = null
               </option>
             ))}
           </select>
-          {errors.fromWallet && <p className="text-red-500 text-xs">Please select a wallet</p>}
+          {errors.walletId && <p className="text-red-500 text-xs">Please select a wallet</p>}
         </div>
 
-        {/* To Wallet (for transfers only) */}
-        {transactionType === 'Transfer' && (
-          <div>
-            <label className="block text-sm font-medium text-gray-700">To Wallet</label>
-            <select
-              {...register('toWallet', { required: true })}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary"
-            >
-              <option value="">Select Destination</option>
-              {wallets
-                .filter(w => w._id !== watch('fromWallet'))
-                .map(wallet => (
-                  <option key={wallet._id} value={wallet._id}>
-                    {wallet.name} (₹{wallet.currentBalance})
-                  </option>
-                ))}
-            </select>
-            {errors.toWallet && <p className="text-red-500 text-xs">Please select a destination wallet</p>}
-          </div>
-        )}
-
         {/* Category */}
-        {transactionType !== 'Transfer' && (
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Category</label>
-            <select
-              {...register('category', { required: true })}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary"
-            >
-              <option value="">Select Category</option>
-              {transactionType === 'Income' ? (
-                <>
-                  <option value="Salary">Salary</option>
-                  <option value="Investment">Investment</option>
-                  <option value="Business">Business</option>
-                  <option value="Other Income">Other Income</option>
-                </>
-              ) : (
-                <>
-                  <option value="Food">Food</option>
-                  <option value="Transport">Transport</option>
-                  <option value="Entertainment">Entertainment</option>
-                  <option value="Shopping">Shopping</option>
-                  <option value="Bills">Bills</option>
-                  <option value="Other Expense">Other Expense</option>
-                </>
-              )}
-            </select>
-            {errors.category && <p className="text-red-500 text-xs">Category is required</p>}
-          </div>
-        )}
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Category</label>
+          <select
+            {...register('category', { required: true })}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary"
+          >
+            <option value="">Select Category</option>
+            <option value="Food">Food</option>
+            <option value="Transport">Transport</option>
+            <option value="Entertainment">Entertainment</option>
+            <option value="Shopping">Shopping</option>
+            <option value="Bills">Bills</option>
+            <option value="Other Expense">Other Expense</option>
+          </select>
+          {errors.category && <p className="text-red-500 text-xs">Category is required</p>}
+        </div>
 
         {/* Date */}
         <div>

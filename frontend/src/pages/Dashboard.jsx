@@ -26,7 +26,6 @@ function Dashboard() {
       setIsLoading(true);
       setError("");
 
-      // ✅ Ensure token
       const token = localStorage.getItem("token");
       if (!token) throw new Error("No auth token found");
       api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
@@ -63,7 +62,7 @@ function Dashboard() {
         setWallets([]);
       }
 
-      // ✅ Parse transactions and normalize type
+      // ✅ Parse transactions
       let txns = [];
       if (Array.isArray(transactionsRes.data?.data?.transactions)) {
         txns = transactionsRes.data.data.transactions;
@@ -74,11 +73,10 @@ function Dashboard() {
       } else if (Array.isArray(transactionsRes.data)) {
         txns = transactionsRes.data;
       }
-      // Normalize type values and ensure amount is a number
       txns = txns.map((t) => ({
         ...t,
         type: t.type ? t.type.toLowerCase() : "",
-        amount: Number(t.amount || 0)
+        amount: Number(t.amount || 0),
       }));
       setTransactions(txns);
 
@@ -94,7 +92,6 @@ function Dashboard() {
       }
     } catch (error) {
       console.error("Dashboard error:", error);
-      console.error("Error response:", error.response?.data);
 
       if (error.response?.status === 401) {
         localStorage.removeItem("token");
@@ -157,80 +154,66 @@ function Dashboard() {
     );
   };
 
-  const prepareDashboardData = (transactions) => {
-    return transactions.reduce(
-      (acc, t) => {
-        const amount = Number(t.amount);
-        if (t.type.toLowerCase() === "income") {
-          acc.totalIncome += amount;
-        } else if (t.type.toLowerCase() === "expense") {
-          acc.totalExpense += amount;
-        }
-        return acc;
-      },
-      { totalIncome: 0, totalExpense: 0 }
-    );
-  };
-
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-indigo-500"></div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="text-center text-red-600 mt-8">
+      <div className="text-center text-red-600 mt-12 text-lg font-medium">
         <p>{error}</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-10">
       {/* Total Balance */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-md p-6 transition hover:shadow-lg">
+        <h2 className="text-xl font-semibold text-gray-800 dark:text-white mb-2">
           Total Balance
         </h2>
-        <p className="text-3xl font-bold text-indigo-600 dark:text-indigo-400">
+        <p className="text-4xl font-extrabold text-indigo-600 dark:text-indigo-400">
           ₹{calculateTotalBalance().toLocaleString()}
         </p>
       </div>
 
       {/* Wallets Grid */}
       <div>
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+        <h2 className="text-xl font-semibold text-gray-800 dark:text-white mb-6">
           Your Wallets
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {wallets.map((wallet) => (
-            <div key={wallet._id} className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg">
-              <div className="px-4 py-5 sm:p-6">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0">
-                    <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-                      {wallet.name}
-                      <span className="ml-2 px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800">
-                        {wallet.type}
-                      </span>
-                    </h3>
-                  </div>
-                </div>
-                <div className="mt-4">
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Opening Balance</p>
-                  <p className="mt-1 text-xl font-semibold text-gray-900 dark:text-white">
-                    ₹{wallet.openingBalance?.toLocaleString()}
-                  </p>
-                </div>
-                <div className="mt-4">
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Current Balance</p>
-                  <p className="mt-1 text-xl font-semibold text-gray-900 dark:text-white">
-                    ₹{wallet.currentBalance?.toLocaleString()}
-                  </p>
-                </div>
+            <div
+              key={wallet._id}
+              className="bg-white dark:bg-gray-800 rounded-2xl shadow-md p-6 transition hover:shadow-lg"
+            >
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
+                {wallet.name}
+                <span className="ml-2 px-2 py-1 text-xs font-medium rounded-full bg-indigo-100 text-indigo-700 dark:bg-indigo-700 dark:text-white">
+                  {wallet.type}
+                </span>
+              </h3>
+              <div className="mt-4">
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Opening Balance
+                </p>
+                <p className="mt-1 text-xl font-semibold text-gray-900 dark:text-white">
+                  ₹{wallet.openingBalance?.toLocaleString()}
+                </p>
+              </div>
+              <div className="mt-4">
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Current Balance
+                </p>
+                <p className="mt-1 text-2xl font-bold text-indigo-600 dark:text-indigo-400">
+                  ₹{wallet.currentBalance?.toLocaleString()}
+                </p>
               </div>
             </div>
           ))}
@@ -239,15 +222,15 @@ function Dashboard() {
 
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-md p-6 transition hover:shadow-lg">
+          <h2 className="text-xl font-semibold text-gray-800 dark:text-white mb-4">
             Expenses by Category
           </h2>
           <DonutChart data={prepareExpensesByCategory()} />
         </div>
 
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-md p-6 transition hover:shadow-lg">
+          <h2 className="text-xl font-semibold text-gray-800 dark:text-white mb-4">
             Budget vs Spent
           </h2>
           <BarChart data={prepareBudgetVsSpent()} />
@@ -255,8 +238,8 @@ function Dashboard() {
       </div>
 
       {/* Income vs Expense Trend */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-md p-6 transition hover:shadow-lg">
+        <h2 className="text-xl font-semibold text-gray-800 dark:text-white mb-4">
           Income vs Expense Trend
         </h2>
         <LineChart data={prepareIncomeVsExpense()} />
