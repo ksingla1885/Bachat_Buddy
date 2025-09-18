@@ -12,6 +12,7 @@ const Wallets = () => {
   });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
+  const [infoMessage, setInfoMessage] = useState('');
   const [editingWallet, setEditingWallet] = useState(null);
   const [showTransferModal, setShowTransferModal] = useState(false);
   const [transferFrom, setTransferFrom] = useState(null);
@@ -124,21 +125,140 @@ const Wallets = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-          Your Wallets
+      {/* Banner Section */}
+      <div className="text-center py-8">
+        <h1 className="text-4xl font-bold text-gradient mb-2 flex items-center justify-center">
+          <span className="mr-3">💳</span>
+          My Wallets
         </h1>
+        <p className="text-gray-600 dark:text-gray-400 text-lg">
+          Manage and track all your financial accounts in one place
+        </p>
+      </div>
+
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Wallets Overview</h1>
         <button
           onClick={() => setIsCreating(true)}
-          className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+          className="btn-primary flex items-center space-x-2"
         >
-          Add New Wallet
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+          </svg>
+          <span>Add Wallet</span>
         </button>
       </div>
 
       {error && (
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
           {error}
+        </div>
+      )}
+
+      {infoMessage && (
+        <div className="relative mb-6 animate-fadeInUp">
+          {/* 3D Animated Container */}
+          <div className="relative bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 dark:from-blue-900/20 dark:via-indigo-900/20 dark:to-purple-900/20 border border-blue-200 dark:border-blue-800 rounded-2xl p-6 shadow-2xl transform hover:scale-105 transition-all duration-500 overflow-hidden">
+            
+            {/* Animated Background Particles */}
+            <div className="absolute inset-0 overflow-hidden">
+              <div className="absolute -top-4 -left-4 w-8 h-8 bg-blue-400/20 rounded-full animate-bounce" style={{animationDelay: '0s'}}></div>
+              <div className="absolute top-8 right-8 w-6 h-6 bg-indigo-400/20 rounded-full animate-bounce" style={{animationDelay: '0.5s'}}></div>
+              <div className="absolute bottom-4 left-1/3 w-4 h-4 bg-purple-400/20 rounded-full animate-bounce" style={{animationDelay: '1s'}}></div>
+              <div className="absolute top-1/2 right-4 w-3 h-3 bg-blue-300/30 rounded-full animate-pulse"></div>
+            </div>
+
+            {/* Floating 3D Icon */}
+            <div className="flex items-start space-x-4 relative z-10">
+              <div className="relative animate-float3D">
+                <div className="w-16 h-16 bg-gradient-to-br from-blue-400 via-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-2xl transform rotate-3 hover:rotate-6 transition-transform duration-300 animate-glow3D">
+                  {/* 3D Shadow Effect */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-blue-600 to-purple-700 rounded-2xl transform translate-x-1 translate-y-1 -z-10 opacity-50"></div>
+                  
+                  {/* Animated Clock Icon */}
+                  <div className="relative animate-wiggle">
+                    <svg className="w-8 h-8 text-white animate-spin" style={{animationDuration: '3s'}} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    
+                    {/* Glowing Ring */}
+                    <div className="absolute inset-0 rounded-full border-2 border-white/30 animate-ping"></div>
+                  </div>
+                </div>
+                
+                {/* Floating Sparkles */}
+                <div className="absolute -top-2 -right-2 w-4 h-4 animate-sparkle">
+                  <div className="w-2 h-2 bg-yellow-400 rounded-full"></div>
+                </div>
+                <div className="absolute -bottom-1 -left-1 w-3 h-3 animate-sparkle" style={{animationDelay: '1s'}}>
+                  <div className="w-1 h-1 bg-blue-300 rounded-full"></div>
+                </div>
+                <div className="absolute top-1 left-8 w-2 h-2 animate-sparkle" style={{animationDelay: '0.5s'}}>
+                  <div className="w-1 h-1 bg-purple-300 rounded-full"></div>
+                </div>
+              </div>
+
+              {/* Content with 3D Text Effect */}
+              <div className="flex-1">
+                <div className="relative">
+                  <h3 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 dark:from-blue-400 dark:via-indigo-400 dark:to-purple-400 mb-2 transform hover:scale-105 transition-transform duration-300">
+                    ⏰ Wallet Protection Active
+                  </h3>
+                  {/* Text Shadow Effect */}
+                  <div className="absolute inset-0 text-xl font-bold text-blue-200 dark:text-blue-800 transform translate-x-0.5 translate-y-0.5 -z-10 mb-2">
+                    ⏰ Wallet Protection Active
+                  </div>
+                </div>
+                
+                <div className="relative">
+                  <p className="text-blue-800 dark:text-blue-200 leading-relaxed transform hover:translate-x-1 transition-transform duration-300">
+                    {infoMessage}
+                  </p>
+                  {/* Subtle text shadow */}
+                  <div className="absolute inset-0 text-blue-300 dark:text-blue-700 transform translate-x-0.5 translate-y-0.5 -z-10">
+                    {infoMessage}
+                  </div>
+                </div>
+
+                {/* Animated Progress Bar */}
+                <div className="mt-4 relative">
+                  <div className="w-full h-2 bg-blue-200 dark:bg-blue-800 rounded-full overflow-hidden">
+                    <div className="h-full bg-gradient-to-r from-blue-400 via-indigo-500 to-purple-600 rounded-full animate-pulse transform origin-left animate-slideInLeft"></div>
+                  </div>
+                  <p className="text-xs text-blue-600 dark:text-blue-300 mt-1 animate-fadeInUp">
+                    🛡️ Security cooldown period active
+                  </p>
+                </div>
+              </div>
+
+              {/* 3D Close Button */}
+              <button 
+                onClick={() => setInfoMessage('')}
+                className="relative group"
+              >
+                <div className="w-10 h-10 bg-gradient-to-br from-red-400 to-pink-500 rounded-xl flex items-center justify-center shadow-lg transform hover:scale-110 hover:rotate-12 transition-all duration-300 group-hover:shadow-2xl">
+                  {/* 3D Shadow */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-red-600 to-pink-700 rounded-xl transform translate-x-0.5 translate-y-0.5 -z-10 opacity-50 group-hover:translate-x-1 group-hover:translate-y-1 transition-transform duration-300"></div>
+                  
+                  <svg className="w-5 h-5 text-white transform group-hover:rotate-90 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </div>
+                
+                {/* Hover Glow Effect */}
+                <div className="absolute inset-0 rounded-xl bg-red-400/20 scale-0 group-hover:scale-150 transition-transform duration-300 -z-20"></div>
+              </button>
+            </div>
+
+            {/* Animated Border Glow */}
+            <div className="absolute inset-0 rounded-2xl border-2 border-transparent bg-gradient-to-r from-blue-400 via-indigo-500 to-purple-600 opacity-20 animate-pulse"></div>
+            
+            {/* Corner Decorations */}
+            <div className="absolute top-2 left-2 w-6 h-6 border-l-2 border-t-2 border-blue-300 dark:border-blue-600 rounded-tl-lg"></div>
+            <div className="absolute top-2 right-2 w-6 h-6 border-r-2 border-t-2 border-indigo-300 dark:border-indigo-600 rounded-tr-lg"></div>
+            <div className="absolute bottom-2 left-2 w-6 h-6 border-l-2 border-b-2 border-purple-300 dark:border-purple-600 rounded-bl-lg"></div>
+            <div className="absolute bottom-2 right-2 w-6 h-6 border-r-2 border-b-2 border-blue-300 dark:border-blue-600 rounded-br-lg"></div>
+          </div>
         </div>
       )}
 
@@ -276,8 +396,19 @@ const Wallets = () => {
                 try {
                   await api.deleteWallet(wallet._id);
                   setWallets(wallets.filter(w => w._id !== wallet._id));
+                  setError(''); // Clear any previous errors
+                  setInfoMessage(''); // Clear any previous info messages
                 } catch (err) {
-                  setError(err.response?.data?.message || 'Error deleting wallet');
+                  const errorMessage = err.response?.data?.message || 'Error deleting wallet';
+                  
+                  // Check if it's a time-based restriction (12 hours or 24 hours)
+                  if (errorMessage.includes('12 hours') || errorMessage.includes('24 hours')) {
+                    setInfoMessage(errorMessage);
+                    setError(''); // Clear error state
+                  } else {
+                    setError(errorMessage);
+                    setInfoMessage(''); // Clear info state
+                  }
                 }
               }
             }}

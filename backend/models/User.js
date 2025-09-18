@@ -16,7 +16,12 @@ const userSchema = new mongoose.Schema({
   },
   passwordHash: {
     type: String,
-    required: true
+    required: false // Not required for Google OAuth users
+  },
+  googleId: { 
+    type: String, 
+    unique: true, 
+    sparse: true // Allows multiple null values for googleId
   },
   createdAt: {
     type: Date,

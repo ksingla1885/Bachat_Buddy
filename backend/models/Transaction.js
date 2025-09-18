@@ -61,4 +61,27 @@ const transactionSchema = new mongoose.Schema({
   }
 }, { timestamps: true });
 
+// ===============================
+// Database Indexes for Performance
+// ===============================
+// Index for user-specific queries (most common)
+transactionSchema.index({ userId: 1, date: -1 });
+
+// Index for wallet-specific queries
+transactionSchema.index({ userId: 1, walletId: 1, date: -1 });
+
+// Index for category-based queries
+transactionSchema.index({ userId: 1, category: 1, date: -1 });
+
+// Index for type-based queries
+transactionSchema.index({ userId: 1, type: 1, date: -1 });
+
+// Compound index for complex filtering
+transactionSchema.index({ 
+  userId: 1, 
+  type: 1, 
+  category: 1, 
+  date: -1 
+});
+
 module.exports = mongoose.model('Transaction', transactionSchema);

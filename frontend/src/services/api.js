@@ -43,16 +43,24 @@ export const deleteWallet = (id) => api.delete(`/wallets/${id}`);
 export const updateWallet = (id, data) => api.put(`/wallets/${id}`, data);
 
 //
-// ----------------- Transaction API -----------------
+// ----------------- Transaction API (Optimized) -----------------
 //
 export const getTransactions = (params) =>
   api.get("/transactions", { params });
+
+// New optimized endpoint for transaction stats
+export const getTransactionStats = (params) =>
+  api.get("/transactions/stats", { params });
+
+// Get transactions with stats in single call
+export const getTransactionsWithStats = (params) =>
+  api.get("/transactions", { params: { ...params, includeStats: true } });
 
 export const createTransaction = (data) =>
   api.post("/transactions", data);
 
 export const updateTransaction = (id, data) =>
-  api.put(`/transactions/${id}`, data); // ✅ added update
+  api.put(`/transactions/${id}`, data);
 
 export const deleteTransaction = (id) =>
   api.delete(`/transactions/${id}`);

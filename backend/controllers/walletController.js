@@ -126,19 +126,8 @@ exports.updateWallet = async (req, res) => {
 // Delete wallet
 exports.deleteWallet = async (req, res) => {
   try {
-    // Check if wallet has any transactions
-    const transactionCount = await Transaction.countDocuments({
-      walletId: req.params.id
-    });
-
-    if (transactionCount > 0) {
-      return res.status(400).json({
-        status: 'error',
-        message: 'Cannot delete wallet with existing transactions'
-      });
-    }
-
-    const wallet = await Wallet.findOneAndDelete({
+    // First, check if wallet exists and belongs to user
+    const wallet = await Wallet.findOne({
       _id: req.params.id,
       userId: req.user.id
     });
@@ -149,6 +138,41 @@ exports.deleteWallet = async (req, res) => {
         message: 'Wallet not found'
       });
     }
+
+    // Calculate 12 hours ago from now (for wallet creation check)
+    const twelveHoursAgo = new Date();
+    twelveHoursAgo.setHours(twelveHoursAgo.getHours() - 12);
+
+    // Check if wallet was created within the last 12 hours
+    if (wallet.createdAt > twelveHoursAgo) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Cannot delete wallet created within the last 12 hours. Please wait before deleting this wallet.'
+      });
+    }
+
+    // Calculate 24 hours ago from now (for transaction check)
+    const twentyFourHoursAgo = new Date();
+    twentyFourHoursAgo.setHours(twentyFourHoursAgo.getHours() - 24);
+
+    // Check if wallet has any transactions within the last 24 hours
+    const recentTransactionCount = await Transaction.countDocuments({
+      walletId: req.params.id,
+      createdAt: { $gte: twentyFourHoursAgo }
+    });
+
+    if (recentTransactionCount > 0) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Cannot delete wallet with transactions created within the last 24 hours. Please try again later.'
+      });
+    }
+
+    // If all checks pass, delete the wallet
+    await Wallet.findOneAndDelete({
+      _id: req.params.id,
+      userId: req.user.id
+    });
 
     res.status(200).json({
       status: 'success',

@@ -31,4 +31,13 @@ const walletSchema = new mongoose.Schema({
   }
 }, { timestamps: true });
 
+// ===============================
+// Database Indexes for Performance
+// ===============================
+// Index for user-specific wallet queries
+walletSchema.index({ userId: 1 });
+
+// Index for wallet type queries
+walletSchema.index({ userId: 1, type: 1 });
+
 module.exports = mongoose.model('Wallet', walletSchema);

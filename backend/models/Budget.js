@@ -38,4 +38,13 @@ const budgetSchema = new mongoose.Schema({
   }
 }, { timestamps: true });
 
+// ===============================
+// Database Indexes for Performance
+// ===============================
+// Index for user-specific budget queries
+budgetSchema.index({ userId: 1, month: 1, year: 1 });
+
+// Index for category-based budget queries
+budgetSchema.index({ userId: 1, category: 1 });
+
 module.exports = mongoose.model('Budget', budgetSchema);

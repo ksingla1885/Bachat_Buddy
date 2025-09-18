@@ -3,6 +3,7 @@ const Wallet = require('../models/Wallet');
 const Budget = require('../models/Budget');
 const { categorizeTransaction, suggestTags } = require('../utils/categoryTagger');
 const emailService = require('../utils/emailService');
+const { clearUserCache } = require('../middleware/cache');
 const mongoose = require('mongoose');
 
 // ===============================
@@ -72,6 +73,9 @@ exports.createTransaction = async (req, res) => {
       await wallet.save();
     }
 
+    // Clear user cache after creating transaction
+    clearUserCache(req.user.id);
+
     res.status(201).json({
       status: 'success',
       data: { transaction }
@@ -88,7 +92,7 @@ exports.createTransaction = async (req, res) => {
 };
 
 // ===============================
-// Get All Transactions
+// Get All Transactions (Optimized)
 // ===============================
 exports.getTransactions = async (req, res) => {
   try {
@@ -99,7 +103,8 @@ exports.getTransactions = async (req, res) => {
       startDate,
       endDate,
       page = 1,
-      limit = 10
+      limit = 10,
+      includeStats = false // New parameter for stats calculation
     } = req.query;
 
     const query = { userId: req.user.id };
@@ -113,27 +118,38 @@ exports.getTransactions = async (req, res) => {
       if (endDate) query.date.$lte = new Date(endDate);
     }
 
-    const skip = (page - 1) * limit;
+    const skip = (page - 1) * parseInt(limit);
+    const limitNum = parseInt(limit);
 
-    const transactions = await Transaction.find(query)
-      .sort({ date: -1 })
-      .skip(skip)
-      .limit(limit)
-      .populate('walletId', 'name type');
+    // Use Promise.all for parallel execution
+    const [transactions, total, stats] = await Promise.all([
+      Transaction.find(query)
+        .sort({ date: -1 })
+        .skip(skip)
+        .limit(limitNum)
+        .populate('walletId', 'name type')
+        .lean(), // Use lean() for better performance
+      Transaction.countDocuments(query),
+      includeStats === 'true' ? getTransactionStats(req.user.id, query) : null
+    ]);
 
-    const total = await Transaction.countDocuments(query);
-
-    res.status(200).json({
+    const response = {
       status: 'success',
       data: {
         transactions,
         pagination: {
           total,
           page: parseInt(page),
-          pages: Math.ceil(total / limit)
+          pages: Math.ceil(total / limitNum)
         }
       }
-    });
+    };
+
+    if (stats) {
+      response.data.stats = stats;
+    }
+
+    res.status(200).json(response);
   } catch (error) {
     res.status(500).json({
       status: 'error',
@@ -144,14 +160,53 @@ exports.getTransactions = async (req, res) => {
 };
 
 // ===============================
-// Get Single Transaction
+// Get Transaction Stats (Helper Function)
+// ===============================
+const getTransactionStats = async (userId, baseQuery = {}) => {
+  const query = { ...baseQuery, userId };
+  
+  const stats = await Transaction.aggregate([
+    { $match: query },
+    {
+      $group: {
+        _id: '$type',
+        total: { $sum: '$amount' },
+        count: { $sum: 1 }
+      }
+    }
+  ]);
+
+  const result = {
+    totalIncome: 0,
+    totalExpenses: 0,
+    totalTransactions: 0,
+    netFlow: 0
+  };
+
+  stats.forEach(stat => {
+    if (stat._id === 'Income') {
+      result.totalIncome = stat.total;
+    } else if (stat._id === 'Expense') {
+      result.totalExpenses = stat.total;
+    }
+    result.totalTransactions += stat.count;
+  });
+
+  result.netFlow = result.totalIncome - result.totalExpenses;
+  return result;
+};
+
+// ===============================
+// Get Single Transaction (Optimized)
 // ===============================
 exports.getTransaction = async (req, res) => {
   try {
     const transaction = await Transaction.findOne({
       _id: req.params.id,
       userId: req.user.id
-    }).populate('walletId', 'name type');
+    })
+    .populate('walletId', 'name type')
+    .lean(); // Use lean() for better performance
 
     if (!transaction) {
       return res.status(404).json({
@@ -168,6 +223,45 @@ exports.getTransaction = async (req, res) => {
     res.status(500).json({
       status: 'error',
       message: 'Error fetching transaction',
+      error: error.message
+    });
+  }
+};
+
+// ===============================
+// Get Transaction Stats Endpoint
+// ===============================
+exports.getTransactionStats = async (req, res) => {
+  try {
+    const {
+      walletId,
+      category,
+      type,
+      startDate,
+      endDate
+    } = req.query;
+
+    const query = { userId: req.user.id };
+
+    if (walletId) query.walletId = walletId;
+    if (category) query.category = category;
+    if (type) query.type = type;
+    if (startDate || endDate) {
+      query.date = {};
+      if (startDate) query.date.$gte = new Date(startDate);
+      if (endDate) query.date.$lte = new Date(endDate);
+    }
+
+    const stats = await getTransactionStats(req.user.id, query);
+
+    res.status(200).json({
+      status: 'success',
+      data: { stats }
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: 'error',
+      message: 'Error fetching transaction stats',
       error: error.message
     });
   }
@@ -222,6 +316,9 @@ exports.updateTransaction = async (req, res) => {
       ? oldTransaction.amount
       : -oldTransaction.amount;
     await wallet.save();
+
+    // Clear user cache after updating transaction
+    clearUserCache(req.user.id);
 
     res.status(200).json({
       status: 'success',
@@ -279,6 +376,9 @@ exports.deleteTransaction = async (req, res) => {
     // ❌ OLD: await transaction.remove();  <-- DEPRECATED
     // ✅ NEW FIX:
     await transaction.deleteOne(); // safer in Mongoose 7+
+
+    // Clear user cache after deleting transaction
+    clearUserCache(req.user.id);
 
     res.status(200).json({
       status: 'success',
