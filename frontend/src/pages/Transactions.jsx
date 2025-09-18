@@ -106,7 +106,8 @@ const Transactions = () => {
   };
 
   const renderTransactionRow = (transaction) => {
-    const walletName = wallets.find(w => String(w._id) === String(transaction.walletId))?.name || transaction.walletName || 'Unknown';
+    console.log(wallets);
+    const walletName = wallets.find(w => String(w._id) === String(transaction.walletId._id))?.name || transaction.walletName || 'Unknown';
 
     return (
       <tr key={transaction._id} className="hover:bg-gray-50 dark:hover:bg-gray-700">

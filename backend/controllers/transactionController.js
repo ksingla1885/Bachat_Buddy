@@ -36,6 +36,7 @@ exports.createTransaction = async (req, res) => {
     }
 
     // For transfers, add toWallet
+    
     if (type === 'Transfer') {
       if (!toWallet) {
         return res.status(400).json({
@@ -51,7 +52,7 @@ exports.createTransaction = async (req, res) => {
 
     // Update wallet balance(s)
     if (type === 'Transfer') {
-      const [fromWallet, toWallet] = await Promise.all([
+      const [fromWallet, toWalletDoc] = await Promise.all([
         Wallet.findById(walletId),
         Wallet.findById(toWallet)
       ]);
