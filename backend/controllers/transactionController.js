@@ -58,7 +58,7 @@ exports.createTransaction = async (req, res) => {
       ]);
 
       fromWallet.currentBalance = Number(fromWallet.currentBalance) - numericAmount;
-      toWallet.currentBalance = Number(toWallet.currentBalance) + numericAmount;
+      toWalletDoc.currentBalance = Number(toWalletDoc.currentBalance) + numericAmount;
       console.log("From Wallet New Balance:", fromWallet.currentBalance);
 
       await Promise.all([

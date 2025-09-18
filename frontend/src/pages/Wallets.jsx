@@ -100,7 +100,10 @@ const Wallets = () => {
       // fetch transfers (get many and filter client-side for from/to matches)
       const response = await api.getTransactions({ type: 'Transfer', limit: 1000 });
       const all = response.data.data.transactions || [];
-      const filtered = all.filter(t => t.walletId === wallet._id || t.toWallet === wallet._id);
+      // Robust string comparison for wallet IDs
+      const filtered = all.filter(
+        t => String(t.walletId) === String(wallet._id) || String(t.toWallet) === String(wallet._id)
+      );
       setHistoryTransfers(filtered);
       setError('');
     } catch (err) {
@@ -379,8 +382,8 @@ const Wallets = () => {
                         <tr key={t._id} className="border-t">
                           <td className="py-2">{new Date(t.date).toLocaleString()}</td>
                           <td className="py-2">₹{Number(t.amount).toLocaleString()}</td>
-                          <td className="py-2">{wallets.find(w => w._id === t.walletId)?.name || t.walletId}</td>
-                          <td className="py-2">{wallets.find(w => w._id === t.toWallet)?.name || t.toWallet}</td>
+                          <td className="py-2">{wallets.find(w => String(w._id) === String(t.walletId))?.name || t.walletId}</td>
+                          <td className="py-2">{wallets.find(w => String(w._id) === String(t.toWallet))?.name || t.toWallet}</td>
                           <td className="py-2">{t.notes || '-'}</td>
                         </tr>
                       ))}

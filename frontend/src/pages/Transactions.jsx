@@ -292,7 +292,7 @@ const Transactions = () => {
             </tr>
           </thead>
           <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-            {transactions.map(transaction => renderTransactionRow(transaction))}
+            {transactions.filter(t => t.type !== 'Transfer').map(transaction => renderTransactionRow(transaction))}
           </tbody>
         </table>
       </div>
