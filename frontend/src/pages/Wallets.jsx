@@ -20,11 +20,6 @@ const Wallets = () => {
   const [transferNotes, setTransferNotes] = useState('');
   const [isTransferring, setIsTransferring] = useState(false);
 
-  const [showHistoryModal, setShowHistoryModal] = useState(false);
-  const [historyWallet, setHistoryWallet] = useState(null);
-  const [historyTransfers, setHistoryTransfers] = useState([]);
-  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
-
   useEffect(() => {
     fetchWallets();
   }, []);
@@ -89,29 +84,6 @@ const Wallets = () => {
       setError(err.response?.data?.message || 'Error creating transfer');
     } finally {
       setIsTransferring(false);
-    }
-  };
-
-  const openHistoryModal = async (wallet) => {
-    setHistoryWallet(wallet);
-    setShowHistoryModal(true);
-    setIsLoadingHistory(true);
-    try {
-      // fetch transfers (get many and filter client-side for from/to matches)
-      const response = await api.getTransactions({ type: 'Transfer', limit: 1000 });
-      const all = response.data.data.transactions || [];
-      // Robust string comparison for wallet IDs
-      const filtered = all.filter(
-        t => String(t.walletId) === String(wallet._id) || String(t.toWallet) === String(wallet._id)
-      );
-      setHistoryTransfers(filtered);
-      setError('');
-    } catch (err) {
-      console.error('Error fetching transfer history:', err.response?.data || err.message || err);
-      setError(err.response?.data?.message || 'Error fetching transfer history');
-      setHistoryTransfers([]);
-    } finally {
-      setIsLoadingHistory(false);
     }
   };
 
@@ -310,7 +282,7 @@ const Wallets = () => {
               }
             }}
             onTransfer={() => openTransferModal(wallet)}
-            onViewHistory={() => openHistoryModal(wallet)}
+            // Removed onViewHistory
           />
         ))}
       </div>
@@ -353,48 +325,7 @@ const Wallets = () => {
       )}
 
       {/* History Modal */}
-      {showHistoryModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="bg-white dark:bg-gray-800 rounded-md shadow-lg w-full max-w-2xl p-6">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold">Transfer History — {historyWallet?.name}</h3>
-              <button onClick={() => setShowHistoryModal(false)} className="text-gray-500">Close</button>
-            </div>
-            {isLoadingHistory ? (
-              <div className="text-center">Loading...</div>
-            ) : (
-              <div className="max-h-80 overflow-auto">
-                {historyTransfers.length === 0 ? (
-                  <div className="text-sm text-gray-600">No transfers found for this wallet.</div>
-                ) : (
-                  <table className="min-w-full text-sm">
-                    <thead>
-                      <tr className="text-left text-gray-500 uppercase text-xs">
-                        <th className="py-2">Date</th>
-                        <th className="py-2">Amount</th>
-                        <th className="py-2">From</th>
-                        <th className="py-2">To</th>
-                        <th className="py-2">Notes</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {historyTransfers.map(t => (
-                        <tr key={t._id} className="border-t">
-                          <td className="py-2">{new Date(t.date).toLocaleString()}</td>
-                          <td className="py-2">₹{Number(t.amount).toLocaleString()}</td>
-                          <td className="py-2">{wallets.find(w => String(w._id) === String(t.walletId))?.name || t.walletId}</td>
-                          <td className="py-2">{wallets.find(w => String(w._id) === String(t.toWallet))?.name || t.toWallet}</td>
-                          <td className="py-2">{t.notes || '-'}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+      {/* Removed transfer history modal */}
     </div>
   );
 };

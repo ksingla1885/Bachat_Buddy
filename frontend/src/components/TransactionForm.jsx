@@ -3,12 +3,14 @@ import { useForm } from 'react-hook-form';
 
 const TransactionForm = ({ onSubmit, wallets, refreshWallets, initialData = null }) => {
   const [isLoading, setIsLoading] = useState(false);
-  const { register, handleSubmit, reset, formState: { errors } } = useForm({
+  const { register, handleSubmit, watch, reset, formState: { errors } } = useForm({
     defaultValues: initialData || {
       type: 'Expense',
       date: new Date().toISOString().split('T')[0]
     }
   });
+
+  const transactionType = watch('type');
 
   const onSubmitForm = async (data) => {
     try {
@@ -91,12 +93,23 @@ const TransactionForm = ({ onSubmit, wallets, refreshWallets, initialData = null
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary"
           >
             <option value="">Select Category</option>
-            <option value="Food">Food</option>
-            <option value="Transport">Transport</option>
-            <option value="Entertainment">Entertainment</option>
-            <option value="Shopping">Shopping</option>
-            <option value="Bills">Bills</option>
-            <option value="Other Expense">Other Expense</option>
+            {transactionType === 'Income' ? (
+              <>
+                <option value="Salary">Salary</option>
+                <option value="Investment">Investment</option>
+                <option value="Business">Business</option>
+                <option value="Other Income">Other Income</option>
+              </>
+            ) : (
+              <>
+                <option value="Food">Food</option>
+                <option value="Transport">Transport</option>
+                <option value="Entertainment">Entertainment</option>
+                <option value="Shopping">Shopping</option>
+                <option value="Bills">Bills</option>
+                <option value="Other Expense">Other Expense</option>
+              </>
+            )}
           </select>
           {errors.category && <p className="text-red-500 text-xs">Category is required</p>}
         </div>

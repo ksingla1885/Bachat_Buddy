@@ -1,6 +1,6 @@
 import React from 'react';
 
-function WalletCard({ wallet, onEdit = () => {}, onDelete = () => {}, onTransfer = () => {}, onViewHistory = () => {} }) {
+function WalletCard({ wallet, onEdit = () => {}, onDelete = () => {}, onTransfer = () => {} }) {
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
       <div className="flex justify-between items-center mb-4">
@@ -39,12 +39,7 @@ function WalletCard({ wallet, onEdit = () => {}, onDelete = () => {}, onTransfer
         >
           Transfer
         </button>
-        <button
-          onClick={() => onViewHistory(wallet)}
-          className="px-3 py-1 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded"
-        >
-          History
-        </button>
+        
         <button
           onClick={() => onDelete(wallet)}
           className="px-3 py-1 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-gray-700 rounded"
