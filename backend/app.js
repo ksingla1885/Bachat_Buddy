@@ -11,6 +11,12 @@ const budgetRoutes = require('./routes/budgetRoutes');
 const recurringRoutes = require('./routes/recurringRoutes');
 const contactRoutes = require('./routes/contactRoutes');
 
+// Phase 2 routes
+const debtRoutes = require('./routes/debtRoutes');
+const goalRoutes = require('./routes/goalRoutes');
+const reportRoutes = require('./routes/reportRoutes');
+const userRoutes = require('./routes/userRoutes');
+
 // Create Express app
 const app = express();
 
@@ -26,6 +32,12 @@ app.use('/api/transactions', transactionRoutes);
 app.use('/api/budgets', budgetRoutes);
 app.use('/api/recurring', recurringRoutes);
 app.use('/api/contact', contactRoutes);
+
+// Phase 2 routes
+app.use('/api/debts', debtRoutes);
+app.use('/api/goals', goalRoutes);
+app.use('/api/reports', reportRoutes);
+app.use('/api/users', userRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

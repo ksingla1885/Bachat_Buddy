@@ -174,7 +174,7 @@ const Budgets = () => {
       {/* Header Section */}
       <div className="text-center py-8">
         <h1 className="text-4xl font-bold text-gradient mb-2 flex items-center justify-center">
-          <span className="mr-3">📊</span>
+          {/* <span className="mr-3">📊</span> */}
           Budget Management
         </h1>
         <p className="text-gray-600 dark:text-gray-400 text-lg">

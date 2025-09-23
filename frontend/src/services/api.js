@@ -83,4 +83,73 @@ export const updateBudget = (id, data) =>
 export const deleteBudget = (id) =>
   api.delete(`/budgets/${id}`);
 
+//
+// ----------------- Debt API -----------------
+//
+export const getDebts = (params) =>
+  api.get("/debts", { params });
+
+export const getDebtStats = () =>
+  api.get("/debts/stats/overview");
+
+export const createDebt = (data) =>
+  api.post("/debts", data);
+
+export const updateDebt = (id, data) =>
+  api.put(`/debts/${id}`, data);
+
+export const deleteDebt = (id) =>
+  api.delete(`/debts/${id}`);
+
+export const updateDebtPayment = (id, data) =>
+  api.patch(`/debts/${id}/payment`, data);
+
+//
+// ----------------- Goal API -----------------
+//
+export const getGoals = (params) =>
+  api.get("/goals", { params });
+
+export const getGoalStats = () =>
+  api.get("/goals/stats/overview");
+
+export const createGoal = (data) =>
+  api.post("/goals", data);
+
+export const updateGoal = (id, data) =>
+  api.put(`/goals/${id}`, data);
+
+export const deleteGoal = (id) =>
+  api.delete(`/goals/${id}`);
+
+export const addSavingsToGoal = (id, data) =>
+  api.patch(`/goals/${id}/savings`, data);
+
+//
+// ----------------- Report API -----------------
+//
+export const exportTransactionsCSV = (params) =>
+  api.get("/reports/csv/transactions", { params });
+
+export const exportComprehensiveCSV = () =>
+  api.get("/reports/csv/comprehensive");
+
+export const exportPDFReport = () =>
+  api.get("/reports/pdf/comprehensive");
+
+export const getReportSummary = () =>
+  api.get("/reports/summary");
+
+//
+// ----------------- User Points API -----------------
+//
+export const getUserPoints = () =>
+  api.get("/users/points");
+
+export const getPointsHistory = (params) =>
+  api.get("/users/points/history", { params });
+
+export const getUserAchievements = () =>
+  api.get("/users/achievements");
+
 export default api;

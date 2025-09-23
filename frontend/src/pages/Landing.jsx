@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import Footer from '../components/Footer';
 import { contactService } from '../services/contactService';
@@ -14,6 +14,76 @@ function Landing() {
   const [contactLoading, setContactLoading] = useState(false);
   const [contactSuccess, setContactSuccess] = useState(false);
   const [contactError, setContactError] = useState('');
+
+  // Animation states
+  const [isVisible, setIsVisible] = useState({});
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const [scrollY, setScrollY] = useState(0);
+
+  // Refs for scroll animations
+  const heroRef = useRef(null);
+  const featuresRef = useRef(null);
+  const aboutRef = useRef(null);
+  const teamRef = useRef(null);
+  const reviewsRef = useRef(null);
+
+  // Mouse tracking for 3D effects
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      setMousePosition({
+        x: (e.clientX / window.innerWidth) * 2 - 1,
+        y: (e.clientY / window.innerHeight) * 2 - 1
+      });
+    };
+
+    const handleScroll = () => {
+      setScrollY(window.scrollY);
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('scroll', handleScroll);
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, []);
+
+  // Scroll-triggered animations
+  useEffect(() => {
+    const observerOptions = {
+      threshold: 0.1,
+      rootMargin: '0px 0px -50px 0px'
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          setIsVisible(prev => ({
+            ...prev,
+            [entry.target.dataset.section]: true
+          }));
+        }
+      });
+    }, observerOptions);
+
+    const sections = [
+      { ref: heroRef, name: 'hero' },
+      { ref: featuresRef, name: 'features' },
+      { ref: aboutRef, name: 'about' },
+      { ref: teamRef, name: 'team' },
+      { ref: reviewsRef, name: 'reviews' }
+    ];
+
+    sections.forEach(({ ref, name }) => {
+      if (ref.current) {
+        ref.current.dataset.section = name;
+        observer.observe(ref.current);
+      }
+    });
+
+    return () => observer.disconnect();
+  }, []);
 
   // Handle contact form input changes
   const handleContactChange = (e) => {
@@ -54,6 +124,11 @@ function Landing() {
       description: 'Manage multiple wallets including cash, bank accounts, and credit cards all in one place.'
     },
     {
+      icon: '💰',
+      title: 'Debt & Loan Tracker',
+      description: 'Track all your loans, credit cards, and debts with automated payment reminders and progress monitoring.'
+    },
+    {
       icon: '📊',
       title: 'Smart Analytics',
       description: 'Get detailed insights into your spending patterns with beautiful charts and reports.'
@@ -64,6 +139,11 @@ function Landing() {
       description: 'Set budgets, track expenses, and get alerts when you\'re approaching your limits.'
     },
     {
+      icon: '🎯',
+      title: 'Saving Goals',
+      description: 'Set financial targets, track your progress, and celebrate milestones with our goal tracking system.'
+    },
+    {
       icon: '🔄',
       title: 'Recurring Transactions',
       description: 'Automate your recurring income and expenses to save time and never miss a payment.'
@@ -72,6 +152,16 @@ function Landing() {
       icon: '📱',
       title: 'Mobile Responsive',
       description: 'Access your finances anywhere, anytime with our fully responsive design.'
+    },
+    {
+      icon: '🏆',
+      title: 'Points & Achievements',
+      description: 'Earn points for healthy financial habits and unlock achievements as you progress on your financial journey.'
+    },
+    {
+      icon: '📄',
+      title: 'Export & Reports',
+      description: 'Download your financial data as CSV or PDF reports for record-keeping and tax purposes.'
     },
     {
       icon: '🔒',
@@ -92,14 +182,24 @@ function Landing() {
       description: 'Quick transactions, instant updates, and real-time synchronization.'
     },
     {
-      icon: '🎨',
-      title: 'Beautiful Design',
-      description: 'Modern, clean interface with dark mode support for comfortable usage.'
+      icon: '🎯',
+      title: 'Goal-Oriented',
+      description: 'Set and track financial goals with progress monitoring and achievement rewards.'
     },
     {
       icon: '📈',
       title: 'Smart Insights',
       description: 'AI-powered recommendations to help you make better financial decisions.'
+    },
+    {
+      icon: '💰',
+      title: 'Debt Management',
+      description: 'Comprehensive debt tracking with payment reminders and progress monitoring.'
+    },
+    {
+      icon: '📊',
+      title: 'Advanced Reporting',
+      description: 'Export your data as CSV or PDF reports for record-keeping and analysis.'
     }
   ];
 
@@ -152,72 +252,135 @@ function Landing() {
       role: 'Software Engineer',
       avatar: 'PS',
       rating: 5,
-      comment: 'BachatBuddy has completely transformed how I manage my finances. The multi-wallet feature is a game-changer!'
+      comment: 'BachatBuddy has completely transformed how I manage my finances. The multi-wallet feature and debt tracker are game-changers!'
     },
     {
       name: 'Rahul Kumar',
       role: 'Business Owner',
       avatar: 'RK',
       rating: 5,
-      comment: 'The budget tracking and analytics features help me keep my business expenses in check. Highly recommended!'
+      comment: 'The budget tracking and saving goals features help me keep my business expenses in check. The points system keeps me motivated!'
     },
     {
       name: 'Anita Patel',
       role: 'Student',
       avatar: 'AP',
       rating: 5,
-      comment: 'Perfect for students like me! The recurring transaction feature helps me track my monthly expenses effortlessly.'
+      comment: 'Perfect for students like me! The recurring transaction feature and goal tracking help me manage my limited budget effectively.'
     },
     {
       name: 'Vikram Singh',
       role: 'Freelancer',
       avatar: 'VS',
       rating: 5,
-      comment: 'As a freelancer, managing multiple income sources was chaotic. BachatBuddy made it simple and organized.'
+      comment: 'As a freelancer, managing multiple income sources was chaotic. BachatBuddy made it simple with export reports and debt management.'
     }
   ];
 
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
-      <section className="relative py-20 px-4 sm:px-6 lg:px-8 overflow-hidden">
-        {/* Background Elements */}
+      <section ref={heroRef} className="relative py-20 px-4 sm:px-6 lg:px-8 overflow-hidden">
+        {/* Background Elements with 3D Parallax */}
         <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:via-blue-900 dark:to-indigo-900"></div>
-        <div className="absolute inset-0 opacity-30">
-          <div className="absolute top-10 left-10 w-72 h-72 bg-blue-300 rounded-full mix-blend-multiply filter blur-xl animate-blob"></div>
-          <div className="absolute top-0 right-4 w-72 h-72 bg-purple-300 rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-2000"></div>
-          <div className="absolute -bottom-8 left-20 w-72 h-72 bg-pink-300 rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-4000"></div>
+        <div
+          className="absolute inset-0 opacity-30"
+          style={{
+            transform: `translate3d(${mousePosition.x * 10}px, ${mousePosition.y * 10}px, 0)`,
+          }}
+        >
+          <div
+            className="absolute top-10 left-10 w-72 h-72 bg-blue-300 rounded-full mix-blend-multiply filter blur-xl animate-blob"
+            style={{
+              transform: `translate3d(${mousePosition.x * -15}px, ${mousePosition.y * -15}px, 0) scale(${1 + scrollY * 0.0001})`,
+            }}
+          ></div>
+          <div
+            className="absolute top-0 right-4 w-72 h-72 bg-purple-300 rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-2000"
+            style={{
+              transform: `translate3d(${mousePosition.x * 20}px, ${mousePosition.y * 15}px, 0) scale(${1 + scrollY * 0.00005})`,
+            }}
+          ></div>
+          <div
+            className="absolute -bottom-8 left-20 w-72 h-72 bg-pink-300 rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-4000"
+            style={{
+              transform: `translate3d(${mousePosition.x * -10}px, ${mousePosition.y * 20}px, 0) scale(${1 + scrollY * 0.00008})`,
+            }}
+          ></div>
+        </div>
+
+        {/* Floating geometric shapes */}
+        <div
+          className="absolute top-20 right-20 opacity-10"
+          style={{
+            transform: `translate3d(${mousePosition.x * 30}px, ${mousePosition.y * 30}px, 0) rotate(${scrollY * 0.1}deg)`,
+          }}
+        >
+          <svg width="100" height="100" viewBox="0 0 100 100" className="animate-float3D">
+            <polygon points="50,10 90,90 10,90" fill="currentColor" className="text-blue-500"/>
+          </svg>
+        </div>
+        <div
+          className="absolute bottom-20 left-10 opacity-10"
+          style={{
+            transform: `translate3d(${mousePosition.x * -25}px, ${mousePosition.y * -25}px, 0) rotate(${scrollY * -0.15}deg)`,
+          }}
+        >
+          <svg width="80" height="80" viewBox="0 0 80 80" className="animate-float3D animation-delay-2000">
+            <circle cx="40" cy="40" r="30" fill="none" stroke="currentColor" strokeWidth="2" className="text-purple-500"/>
+          </svg>
         </div>
 
         <div className="relative max-w-7xl mx-auto">
           <div className="text-center">
             <div className="mb-8 animate-fadeInUp">
-              <div className="w-24 h-24 bg-gradient-to-r from-blue-500 to-purple-600 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-large animate-float3D">
+              <div
+                className="w-24 h-24 bg-gradient-to-r from-blue-500 to-purple-600 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-large animate-float3D"
+                style={{
+                  transform: `translate3d(${mousePosition.x * 5}px, ${mousePosition.y * 5}px, 0) rotateX(${mousePosition.y * 10}deg) rotateY(${mousePosition.x * 10}deg)`,
+                }}
+              >
                 <span className="text-white font-bold text-4xl">₹</span>
               </div>
-              <h1 className="text-5xl md:text-7xl font-bold text-gradient mb-6">
+              <h1
+                className="text-5xl md:text-7xl font-bold text-gradient mb-6"
+                style={{
+                  transform: `translate3d(${mousePosition.x * 2}px, ${mousePosition.y * 2}px, 0)`,
+                }}
+              >
                 BachatBuddy
               </h1>
               <p className="text-xl md:text-2xl text-gray-600 dark:text-gray-300 mb-8 max-w-3xl mx-auto">
                 Your Smart Financial Companion for Better Money Management
               </p>
               <p className="text-lg text-gray-500 dark:text-gray-400 mb-12 max-w-2xl mx-auto">
-                Take control of your finances with our comprehensive personal finance management platform. 
-                Track expenses, manage budgets, and achieve your financial goals with ease.
+                Take control of your finances with our comprehensive personal finance management platform.
+                Track expenses, manage budgets, monitor debts, set saving goals, and achieve your financial dreams with ease.
               </p>
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center animate-slideInRight">
+            <div
+              className="flex flex-col sm:flex-row gap-4 justify-center items-center animate-slideInRight"
+              style={{
+                transform: `translate3d(${mousePosition.x * 3}px, ${mousePosition.y * 3}px, 0)`,
+              }}
+            >
               <Link
                 to="/signup"
-                className="btn-primary text-lg px-8 py-4 shadow-large hover:shadow-xl transform hover:scale-105 transition-all duration-300"
+                className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-8 py-4 rounded-xl font-semibold text-lg hover:from-blue-600 hover:to-purple-700 transform hover:scale-105 hover:-translate-y-1 transition-all duration-300 shadow-large hover:shadow-2xl"
+                style={{
+                  transform: `perspective(1000px) rotateX(${mousePosition.y * 5}deg) rotateY(${mousePosition.x * 5}deg) scale(${isVisible.hero ? 1 : 0.8})`,
+                }}
               >
                 <span className="mr-2">🚀</span>
                 Get Started Free
               </Link>
               <Link
                 to="/login"
-                className="btn-secondary text-lg px-8 py-4 shadow-medium hover:shadow-large transform hover:scale-105 transition-all duration-300"
+                className="border-2 border-white text-white bg-transparent px-8 py-4 rounded-xl font-semibold text-lg hover:bg-white hover:text-blue-600 transform hover:scale-105 hover:-translate-y-1 transition-all duration-300 backdrop-blur-sm"
+                style={{
+                  transform: `perspective(1000px) rotateX(${mousePosition.y * 3}deg) rotateY(${mousePosition.x * 3}deg)`,
+                }}
               >
                 <span className="mr-2">👋</span>
                 Sign In
@@ -228,10 +391,15 @@ function Landing() {
       </section>
 
       {/* Features Section */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-white dark:bg-gray-800">
+      <section ref={featuresRef} className="py-20 px-4 sm:px-6 lg:px-8 bg-white dark:bg-gray-800">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold text-gradient mb-6">
+            <h2
+              className="text-4xl md:text-5xl font-bold text-gradient mb-6"
+              style={{
+                transform: `translate3d(${mousePosition.x * 1}px, ${mousePosition.y * 1}px, 0)`,
+              }}
+            >
               Powerful Features
             </h2>
             <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
@@ -243,16 +411,47 @@ function Landing() {
             {features.map((feature, index) => (
               <div
                 key={index}
-                className="card-modern p-8 text-center card-hover group animate-fadeInUp"
-                style={{ animationDelay: `${index * 0.1}s` }}
+                className="card-modern p-8 text-center card-hover group animate-fadeInUp relative overflow-hidden"
+                style={{
+                  animationDelay: `${index * 0.1}s`,
+                  transform: `perspective(1000px) rotateX(${mousePosition.y * 2}deg) rotateY(${mousePosition.x * 2}deg) translateZ(${isVisible.features ? 0 : 50}px)`,
+                }}
               >
-                <div className="text-6xl mb-6 group-hover:animate-wiggle">{feature.icon}</div>
-                <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+                {/* 3D background effect */}
+                <div
+                  className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                  style={{
+                    transform: `translate3d(${mousePosition.x * 10}px, ${mousePosition.y * 10}px, 0)`,
+                  }}
+                ></div>
+
+                <div
+                  className="text-6xl mb-6 group-hover:animate-wiggle relative z-10"
+                  style={{
+                    transform: `translate3d(${mousePosition.x * 5}px, ${mousePosition.y * 5}px, 0)`,
+                  }}
+                >
+                  {feature.icon}
+                </div>
+                <h3
+                  className="text-2xl font-bold text-gray-900 dark:text-white mb-4 relative z-10"
+                  style={{
+                    transform: `translate3d(${mousePosition.x * 2}px, ${mousePosition.y * 2}px, 0)`,
+                  }}
+                >
                   {feature.title}
                 </h3>
-                <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
+                <p
+                  className="text-gray-600 dark:text-gray-300 leading-relaxed relative z-10"
+                  style={{
+                    transform: `translate3d(${mousePosition.x * 1}px, ${mousePosition.y * 1}px, 0)`,
+                  }}
+                >
                   {feature.description}
                 </p>
+
+                {/* 3D hover effect overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-blue-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
               </div>
             ))}
           </div>
@@ -268,14 +467,15 @@ function Landing() {
                 About BachatBuddy
               </h2>
               <p className="text-lg text-gray-600 dark:text-gray-300 mb-6 leading-relaxed">
-                BachatBuddy was born from the vision of making personal finance management 
-                accessible, intuitive, and powerful for everyone. We believe that financial 
+                BachatBuddy was born from the vision of making personal finance management
+                accessible, intuitive, and powerful for everyone. We believe that financial
                 wellness should not be a luxury but a fundamental right.
               </p>
               <p className="text-lg text-gray-600 dark:text-gray-300 mb-8 leading-relaxed">
-                Our team of financial experts and technology enthusiasts have crafted a 
-                platform that combines the best of both worlds - sophisticated financial 
-                tools with an interface so simple that anyone can use it.
+                Our team of financial experts and technology enthusiasts have crafted a
+                platform that combines the best of both worlds - sophisticated financial
+                tools with an interface so simple that anyone can use it. From budget tracking
+                to debt management, saving goals to export reports, we've got everything you need.
               </p>
               <div className="flex flex-wrap gap-4">
                 <div className="flex items-center space-x-2">
@@ -309,10 +509,15 @@ function Landing() {
       </section>
 
       {/* Meet Our Team Section */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-white dark:bg-gray-800">
+      <section ref={teamRef} className="py-20 px-4 sm:px-6 lg:px-8 bg-white dark:bg-gray-800">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold text-gradient mb-6">
+            <h2
+              className="text-4xl md:text-5xl font-bold text-gradient mb-6"
+              style={{
+                transform: `translate3d(${mousePosition.x * 1}px, ${mousePosition.y * 1}px, 0)`,
+              }}
+            >
               Meet Our Team
             </h2>
             <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
@@ -324,45 +529,87 @@ function Landing() {
             {teamMembers.map((member, index) => (
               <div
                 key={index}
-                className="card-modern p-6 text-center card-hover group animate-fadeInUp"
-                style={{ animationDelay: `${index * 0.1}s` }}
+                className="card-modern p-6 text-center card-hover group animate-fadeInUp relative overflow-hidden"
+                style={{
+                  animationDelay: `${index * 0.1}s`,
+                  transform: `perspective(1000px) rotateX(${mousePosition.y * 1}deg) rotateY(${mousePosition.x * 1}deg) translateZ(${isVisible.team ? 0 : 30}px)`,
+                }}
               >
+                {/* 3D background effect */}
+                <div
+                  className="absolute inset-0 bg-gradient-to-br from-green-500/5 to-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                  style={{
+                    transform: `translate3d(${mousePosition.x * 8}px, ${mousePosition.y * 8}px, 0)`,
+                  }}
+                ></div>
+
                 {/* Profile Photo */}
                 <div className="relative mb-6">
                   {member.photo ? (
                     <img
                       src={member.photo}
                       alt={member.name}
-                      className="w-32 h-32 mx-auto rounded-full object-cover shadow-large group-hover:scale-105 transition-transform duration-300 border-4 border-white dark:border-gray-700"
+                      className="w-32 h-32 mx-auto rounded-full object-cover shadow-large group-hover:scale-105 transition-transform duration-300 border-4 border-white dark:border-gray-700 relative z-10"
+                      style={{
+                        transform: `translate3d(${mousePosition.x * 3}px, ${mousePosition.y * 3}px, 0)`,
+                      }}
                     />
                   ) : (
-                    <div className="w-32 h-32 mx-auto bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-3xl shadow-large group-hover:scale-105 transition-transform duration-300">
+                    <div
+                      className="w-32 h-32 mx-auto bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-3xl shadow-large group-hover:scale-105 transition-transform duration-300 relative z-10"
+                      style={{
+                        transform: `translate3d(${mousePosition.x * 4}px, ${mousePosition.y * 4}px, 0) rotateY(${mousePosition.x * 5}deg)`,
+                      }}
+                    >
                       {member.avatar}
                     </div>
                   )}
-                  <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-green-500 rounded-full border-4 border-white dark:border-gray-800 flex items-center justify-center">
+                  <div
+                    className="absolute -bottom-2 -right-2 w-8 h-8 bg-green-500 rounded-full border-4 border-white dark:border-gray-800 flex items-center justify-center"
+                    style={{
+                      transform: `translate3d(${mousePosition.x * 2}px, ${mousePosition.y * 2}px, 0)`,
+                    }}
+                  >
                     <span className="text-white text-sm">✓</span>
                   </div>
                 </div>
 
                 {/* Member Info */}
-                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+                <h3
+                  className="text-xl font-bold text-gray-900 dark:text-white mb-2 relative z-10"
+                  style={{
+                    transform: `translate3d(${mousePosition.x * 1}px, ${mousePosition.y * 1}px, 0)`,
+                  }}
+                >
                   {member.name}
                 </h3>
-                <p className="text-blue-600 dark:text-blue-400 font-semibold mb-3">
+                <p
+                  className="text-blue-600 dark:text-blue-400 font-semibold mb-3 relative z-10"
+                  style={{
+                    transform: `translate3d(${mousePosition.x * 0.5}px, ${mousePosition.y * 0.5}px, 0)`,
+                  }}
+                >
                   {member.role}
                 </p>
-                <p className="text-gray-600 dark:text-gray-300 text-sm mb-4 leading-relaxed">
+                <p
+                  className="text-gray-600 dark:text-gray-300 text-sm mb-4 leading-relaxed relative z-10"
+                  style={{
+                    transform: `translate3d(${mousePosition.x * 0.3}px, ${mousePosition.y * 0.3}px, 0)`,
+                  }}
+                >
                   {member.description}
                 </p>
 
                 {/* Skills */}
-                <div className="mb-4">
+                <div className="mb-4 relative z-10">
                   <div className="flex flex-wrap gap-2 justify-center">
                     {member.skills.map((skill, skillIndex) => (
                       <span
                         key={skillIndex}
                         className="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 text-xs rounded-full"
+                        style={{
+                          transform: `translate3d(${mousePosition.x * 1}px, ${mousePosition.y * 1}px, 0)`,
+                        }}
                       >
                         {skill}
                       </span>
@@ -371,7 +618,12 @@ function Landing() {
                 </div>
 
                 {/* Social Links */}
-                <div className="flex justify-center space-x-3">
+                <div
+                  className="flex justify-center space-x-3 relative z-10"
+                  style={{
+                    transform: `translate3d(${mousePosition.x * 1}px, ${mousePosition.y * 1}px, 0)`,
+                  }}
+                >
                   <a
                     href={member.github}
                     target="_blank"
@@ -395,21 +647,42 @@ function Landing() {
                     </svg>
                   </a>
                 </div>
+
+                {/* 3D hover effect overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-green-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
               </div>
             ))}
           </div>
 
           {/* Team Stats */}
           <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
-            <div className="animate-fadeInUp" style={{ animationDelay: '0.5s' }}>
+            <div
+              className="animate-fadeInUp"
+              style={{
+                animationDelay: '0.5s',
+                transform: `translate3d(${mousePosition.x * 1}px, ${mousePosition.y * 1}px, 0)`,
+              }}
+            >
               <div className="text-4xl font-bold text-gradient mb-2">4</div>
               <p className="text-gray-600 dark:text-gray-300">Dedicated Developers</p>
             </div>
-            <div className="animate-fadeInUp" style={{ animationDelay: '0.6s' }}>
+            <div
+              className="animate-fadeInUp"
+              style={{
+                animationDelay: '0.6s',
+                transform: `translate3d(${mousePosition.x * 0.8}px, ${mousePosition.y * 0.8}px, 0)`,
+              }}
+            >
               <div className="text-4xl font-bold text-gradient mb-2">6+</div>
               <p className="text-gray-600 dark:text-gray-300">Months of Development</p>
             </div>
-            <div className="animate-fadeInUp" style={{ animationDelay: '0.7s' }}>
+            <div
+              className="animate-fadeInUp"
+              style={{
+                animationDelay: '0.7s',
+                transform: `translate3d(${mousePosition.x * 0.6}px, ${mousePosition.y * 0.6}px, 0)`,
+              }}
+            >
               <div className="text-4xl font-bold text-gradient mb-2">100%</div>
               <p className="text-gray-600 dark:text-gray-300">Passion & Dedication</p>
             </div>
@@ -421,7 +694,12 @@ function Landing() {
       <section className="py-20 px-4 sm:px-6 lg:px-8 bg-white dark:bg-gray-800">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold text-gradient mb-6">
+            <h2
+              className="text-4xl md:text-5xl font-bold text-gradient mb-6"
+              style={{
+                transform: `translate3d(${mousePosition.x * 1}px, ${mousePosition.y * 1}px, 0)`,
+              }}
+            >
               Why Choose BachatBuddy?
             </h2>
             <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
@@ -433,18 +711,49 @@ function Landing() {
             {whyChooseUs.map((item, index) => (
               <div
                 key={index}
-                className="flex items-start space-x-6 p-8 card-modern card-hover animate-fadeInUp"
-                style={{ animationDelay: `${index * 0.1}s` }}
+                className="flex items-start space-x-6 p-8 card-modern card-hover animate-fadeInUp relative overflow-hidden group"
+                style={{
+                  animationDelay: `${index * 0.1}s`,
+                  transform: `perspective(1000px) rotateX(${mousePosition.y * 1}deg) rotateY(${mousePosition.x * 1}deg)`,
+                }}
               >
-                <div className="text-5xl flex-shrink-0">{item.icon}</div>
-                <div>
-                  <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">
+                {/* 3D background effect */}
+                <div
+                  className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-pink-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                  style={{
+                    transform: `translate3d(${mousePosition.x * 5}px, ${mousePosition.y * 5}px, 0)`,
+                  }}
+                ></div>
+
+                <div
+                  className="text-5xl flex-shrink-0 relative z-10"
+                  style={{
+                    transform: `translate3d(${mousePosition.x * 3}px, ${mousePosition.y * 3}px, 0)`,
+                  }}
+                >
+                  {item.icon}
+                </div>
+                <div className="relative z-10">
+                  <h3
+                    className="text-2xl font-bold text-gray-900 dark:text-white mb-3"
+                    style={{
+                      transform: `translate3d(${mousePosition.x * 1}px, ${mousePosition.y * 1}px, 0)`,
+                    }}
+                  >
                     {item.title}
                   </h3>
-                  <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
+                  <p
+                    className="text-gray-600 dark:text-gray-300 leading-relaxed"
+                    style={{
+                      transform: `translate3d(${mousePosition.x * 0.5}px, ${mousePosition.y * 0.5}px, 0)`,
+                    }}
+                  >
                     {item.description}
                   </p>
                 </div>
+
+                {/* 3D hover effect overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-purple-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
               </div>
             ))}
           </div>
@@ -452,10 +761,15 @@ function Landing() {
       </section>
 
       {/* Customer Reviews Section */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-gray-900 dark:to-purple-900">
+      <section ref={reviewsRef} className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-gray-900 dark:to-purple-900">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold text-gradient mb-6">
+            <h2
+              className="text-4xl md:text-5xl font-bold text-gradient mb-6"
+              style={{
+                transform: `translate3d(${mousePosition.x * 1}px, ${mousePosition.y * 1}px, 0)`,
+              }}
+            >
               What Our Users Say
             </h2>
             <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
@@ -467,26 +781,82 @@ function Landing() {
             {reviews.map((review, index) => (
               <div
                 key={index}
-                className="card-modern p-6 card-hover animate-fadeInUp"
-                style={{ animationDelay: `${index * 0.1}s` }}
+                className="card-modern p-6 card-hover animate-fadeInUp relative overflow-hidden group"
+                style={{
+                  animationDelay: `${index * 0.1}s`,
+                  transform: `perspective(1000px) rotateX(${mousePosition.y * 1}deg) rotateY(${mousePosition.x * 1}deg) translateZ(${isVisible.reviews ? 0 : 20}px)`,
+                }}
               >
-                <div className="flex items-center mb-4">
-                  <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold mr-4">
+                {/* 3D background effect */}
+                <div
+                  className="absolute inset-0 bg-gradient-to-br from-yellow-500/5 to-orange-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                  style={{
+                    transform: `translate3d(${mousePosition.x * 6}px, ${mousePosition.y * 6}px, 0)`,
+                  }}
+                ></div>
+
+                <div
+                  className="flex items-center mb-4 relative z-10"
+                  style={{
+                    transform: `translate3d(${mousePosition.x * 1}px, ${mousePosition.y * 1}px, 0)`,
+                  }}
+                >
+                  <div
+                    className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold mr-4 relative z-10"
+                    style={{
+                      transform: `translate3d(${mousePosition.x * 3}px, ${mousePosition.y * 3}px, 0)`,
+                    }}
+                  >
                     {review.avatar}
                   </div>
-                  <div>
-                    <h4 className="font-bold text-gray-900 dark:text-white">{review.name}</h4>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">{review.role}</p>
+                  <div className="relative z-10">
+                    <h4
+                      className="font-bold text-gray-900 dark:text-white"
+                      style={{
+                        transform: `translate3d(${mousePosition.x * 0.5}px, ${mousePosition.y * 0.5}px, 0)`,
+                      }}
+                    >
+                      {review.name}
+                    </h4>
+                    <p
+                      className="text-sm text-gray-600 dark:text-gray-400"
+                      style={{
+                        transform: `translate3d(${mousePosition.x * 0.3}px, ${mousePosition.y * 0.3}px, 0)`,
+                      }}
+                    >
+                      {review.role}
+                    </p>
                   </div>
                 </div>
-                <div className="flex mb-3">
+                <div
+                  className="flex mb-3 relative z-10"
+                  style={{
+                    transform: `translate3d(${mousePosition.x * 0.5}px, ${mousePosition.y * 0.5}px, 0)`,
+                  }}
+                >
                   {[...Array(review.rating)].map((_, i) => (
-                    <span key={i} className="text-yellow-400 text-lg">⭐</span>
+                    <span
+                      key={i}
+                      className="text-yellow-400 text-lg"
+                      style={{
+                        transform: `translate3d(${mousePosition.x * 1}px, ${mousePosition.y * 1}px, 0)`,
+                      }}
+                    >
+                      ⭐
+                    </span>
                   ))}
                 </div>
-                <p className="text-gray-600 dark:text-gray-300 text-sm leading-relaxed">
+                <p
+                  className="text-gray-600 dark:text-gray-300 text-sm leading-relaxed relative z-10"
+                  style={{
+                    transform: `translate3d(${mousePosition.x * 0.3}px, ${mousePosition.y * 0.3}px, 0)`,
+                  }}
+                >
                   "{review.comment}"
                 </p>
+
+                {/* 3D hover effect overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-yellow-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
               </div>
             ))}
           </div>
@@ -655,28 +1025,66 @@ function Landing() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-r from-blue-600 to-purple-600">
-        <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-4xl md:text-5xl font-bold text-white mb-6 animate-fadeInUp">
-            Ready to Take Control of Your Finances?
+      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-r from-blue-600 to-purple-600 relative overflow-hidden">
+        {/* Animated background elements */}
+        <div
+          className="absolute inset-0 opacity-20"
+          style={{
+            transform: `translate3d(${mousePosition.x * 15}px, ${mousePosition.y * 15}px, 0)`,
+          }}
+        >
+          <div className="absolute top-10 right-10 w-32 h-32 bg-white/10 rounded-full blur-xl animate-pulse"></div>
+          <div className="absolute bottom-20 left-20 w-24 h-24 bg-white/20 rounded-full blur-lg animate-pulse animation-delay-1000"></div>
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-40 h-40 bg-white/5 rounded-full blur-2xl animate-pulse animation-delay-2000"></div>
+        </div>
+
+        <div className="max-w-4xl mx-auto text-center relative z-10">
+          <h2
+            className="text-4xl md:text-5xl font-bold text-white mb-6 animate-fadeInUp"
+            style={{
+              transform: `translate3d(${mousePosition.x * 2}px, ${mousePosition.y * 2}px, 0)`,
+            }}
+          >
+            Ready to Take Control of Your Financial Future?
           </h2>
-          <p className="text-xl text-blue-100 mb-8 animate-fadeInUp">
+          <p
+            className="text-xl text-blue-100 mb-8 animate-fadeInUp"
+            style={{
+              transform: `translate3d(${mousePosition.x * 1}px, ${mousePosition.y * 1}px, 0)`,
+            }}
+          >
             Join thousands of users who have already transformed their financial lives with BachatBuddy.
+            From debt management to saving goals, we've got all the tools you need for financial success.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center animate-slideInRight">
+          <div
+            className="flex flex-col sm:flex-row gap-4 justify-center animate-slideInRight"
+            style={{
+              transform: `translate3d(${mousePosition.x * 3}px, ${mousePosition.y * 3}px, 0)`,
+            }}
+          >
             <Link
               to="/signup"
-              className="bg-white text-blue-600 px-8 py-4 rounded-xl font-semibold text-lg hover:bg-gray-100 transform hover:scale-105 transition-all duration-300 shadow-large"
+              className="bg-white text-blue-600 px-8 py-4 rounded-xl font-semibold text-lg hover:bg-gray-100 transform hover:scale-105 hover:-translate-y-1 transition-all duration-300 shadow-large hover:shadow-2xl relative overflow-hidden group"
+              style={{
+                transform: `perspective(1000px) rotateX(${mousePosition.y * 5}deg) rotateY(${mousePosition.x * 5}deg)`,
+              }}
             >
-              <span className="mr-2">🚀</span>
-              Start Your Journey
+              {/* 3D button effect */}
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-purple-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              <span className="mr-2 relative z-10">🚀</span>
+              <span className="relative z-10">Start Your Journey</span>
             </Link>
             <Link
               to="/login"
-              className="border-2 border-white text-white px-8 py-4 rounded-xl font-semibold text-lg hover:bg-white hover:text-blue-600 transform hover:scale-105 transition-all duration-300"
+              className="border-2 border-white text-white px-8 py-4 rounded-xl font-semibold text-lg hover:bg-white hover:text-blue-600 transform hover:scale-105 hover:-translate-y-1 transition-all duration-300 backdrop-blur-sm relative overflow-hidden group"
+              style={{
+                transform: `perspective(1000px) rotateX(${mousePosition.y * 3}deg) rotateY(${mousePosition.x * 3}deg)`,
+              }}
             >
-              <span className="mr-2">👋</span>
-              Welcome Back
+              {/* 3D button effect */}
+              <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              <span className="mr-2 relative z-10">👋</span>
+              <span className="relative z-10">Welcome Back</span>
             </Link>
           </div>
         </div>

@@ -11,6 +11,10 @@ import Dashboard from './pages/Dashboard';
 import Wallets from './pages/Wallets';
 import Transactions from './pages/Transactions';
 import Budgets from './pages/Budgets';
+import DebtTracker from './pages/DebtTracker';
+import Goals from './pages/Goals';
+import Achievements from './pages/Achievements';
+import Reports from './pages/Reports';
 
 // Protected Route Component
 function ProtectedRoute({ children }) {
@@ -110,6 +114,47 @@ function App() {
                 <ProtectedRoute>
                   <AppLayout showNavbar={true} showContainer={true}>
                     <Budgets />
+                  </AppLayout>
+                </ProtectedRoute>
+              } 
+            />
+            {/* Phase 2 Routes */}
+            <Route 
+              path="/debts" 
+              element={
+                <ProtectedRoute>
+                  <AppLayout showNavbar={true} showContainer={true}>
+                    <DebtTracker />
+                  </AppLayout>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/goals" 
+              element={
+                <ProtectedRoute>
+                  <AppLayout showNavbar={true} showContainer={true}>
+                    <Goals />
+                  </AppLayout>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/reports" 
+              element={
+                <ProtectedRoute>
+                  <AppLayout showNavbar={true} showContainer={true}>
+                    <Reports />
+                  </AppLayout>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/achievements" 
+              element={
+                <ProtectedRoute>
+                  <AppLayout showNavbar={true} showContainer={true}>
+                    <Achievements />
                   </AppLayout>
                 </ProtectedRoute>
               } 

@@ -14,6 +14,10 @@ function Dashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
 
+  const resetToCurrentMonth = () => {
+    setCurrentDate(new Date());
+  };
+
   const fetchDashboardData = useCallback(async () => {
     try {
       setIsLoading(true);
@@ -101,7 +105,7 @@ function Dashboard() {
       setTransactions(txns);
       setTransactionStats(stats); // Store stats separately
 
-      // ✅ Parse budgets
+      // Parse budgets
       if (Array.isArray(budgetsRes.data?.data?.summary)) {
         setBudgets(budgetsRes.data.data.summary);
       } else if (Array.isArray(budgetsRes.data?.summary)) {
@@ -137,7 +141,7 @@ function Dashboard() {
     }
   }, [user, fetchDashboardData]);
 
-  // ✅ OPTIMIZED: Memoized calculations to prevent unnecessary re-renders
+  // OPTIMIZED: Memoized calculations to prevent unnecessary re-renders
   const totalBalance = 0; // Removed wallet-based balance calculation
 
   const expensesByCategory = useMemo(() => {
@@ -292,13 +296,15 @@ function Dashboard() {
     return (
       <div className="min-h-screen flex justify-center items-center">
         <div className="text-center p-8 card-modern max-w-md">
-          <div className="w-16 h-16 bg-red-100 dark:bg-red-900 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
+          <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4 md:p-6 lg:p-8">
+            <div className="w-16 h-16 bg-red-100 dark:bg-red-900 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-8 h-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Oops! Something went wrong</h3>
+            <p className="text-gray-600 dark:text-gray-400">{error}</p>
           </div>
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Oops! Something went wrong</h3>
-          <p className="text-gray-600 dark:text-gray-400">{error}</p>
         </div>
       </div>
     );
@@ -310,7 +316,7 @@ function Dashboard() {
       {/* Welcome Header */}
       <div className="text-center py-8">
         <h1 className="text-4xl font-bold text-gradient mb-2">
-          Welcome back, {user?.name}! 👋
+          Welcome back, {user?.name}!
         </h1>
         <p className="text-gray-600 dark:text-gray-400 text-lg">
           Here's your financial overview for today
