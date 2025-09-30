@@ -2,17 +2,18 @@ const Transaction = require('../models/Transaction');
 const Wallet = require('../models/Wallet');
 const Budget = require('../models/Budget');
 const Goal = require('../models/Goal');
-const Debt = require('../models/Debt');
+const NetWorth = require('../models/NetWorth');
 const mongoose = require('mongoose');
 
 // ================================
-// Export Transactions CSV
+// Export Transactions CSV (Report-specific)
 // ================================
 exports.exportTransactionsCSV = async (req, res) => {
   try {
-    const { startDate, endDate, type, category } = req.query;
+    const { startDate, endDate, type, category, reportType } = req.query;
+    const userId = req.user.id;
 
-    let filter = { userId: req.user.id };
+    let filter = { userId };
 
     if (startDate || endDate) {
       filter.date = {};
@@ -27,24 +28,90 @@ exports.exportTransactionsCSV = async (req, res) => {
       .populate('walletId', 'name type')
       .sort({ date: -1 });
 
-    // Convert to CSV format
-    const csvHeader = 'Date,Type,Amount,Category,Wallet,Description,Notes\n';
-    const csvData = transactions.map(transaction => {
-      const date = transaction.date.toISOString().split('T')[0];
-      const type = transaction.type;
-      const amount = transaction.amount;
-      const category = transaction.category || 'N/A';
-      const wallet = transaction.walletId ? transaction.walletId.name : 'N/A';
-      const description = transaction.description || 'N/A';
-      const notes = transaction.notes || 'N/A';
+    let csvHeader = '';
+    let csvData = '';
 
-      return `"${date}","${type}","${amount}","${category}","${wallet}","${description}","${notes}"`;
-    }).join('\n');
+    // Customize export based on report type
+    switch (reportType) {
+      case 'spending':
+        csvHeader = 'Date,Category,Amount,Wallet,Description\n';
+        csvData = transactions
+          .filter(t => t.type === 'Expense')
+          .map(transaction => {
+            const date = transaction.date.toISOString().split('T')[0];
+            const category = transaction.category || 'N/A';
+            const amount = Math.abs(transaction.amount);
+            const wallet = transaction.walletId ? transaction.walletId.name : 'N/A';
+            const description = transaction.description || 'N/A';
+
+            return `"${date}","${category}","${amount}","${wallet}","${description}"`;
+          }).join('\n');
+        break;
+
+      case 'income':
+        csvHeader = 'Date,Category,Amount,Wallet,Description\n';
+        csvData = transactions
+          .filter(t => t.type === 'Income')
+          .map(transaction => {
+            const date = transaction.date.toISOString().split('T')[0];
+            const category = transaction.category || 'N/A';
+            const amount = transaction.amount;
+            const wallet = transaction.walletId ? transaction.walletId.name : 'N/A';
+            const description = transaction.description || 'N/A';
+
+            return `"${date}","${category}","${amount}","${wallet}","${description}"`;
+          }).join('\n');
+        break;
+
+      case 'cashflow':
+        csvHeader = 'Date,Type,Amount,Category,Wallet,Description\n';
+        csvData = transactions.map(transaction => {
+          const date = transaction.date.toISOString().split('T')[0];
+          const type = transaction.type;
+          const amount = transaction.amount;
+          const category = transaction.category || 'N/A';
+          const wallet = transaction.walletId ? transaction.walletId.name : 'N/A';
+          const description = transaction.description || 'N/A';
+
+          return `"${date}","${type}","${amount}","${category}","${wallet}","${description}"`;
+        }).join('\n');
+        break;
+
+      case 'category':
+        csvHeader = 'Date,Category,Amount,Wallet,Description\n';
+        csvData = transactions
+          .filter(t => t.type === 'Expense')
+          .map(transaction => {
+            const date = transaction.date.toISOString().split('T')[0];
+            const category = transaction.category || 'N/A';
+            const amount = Math.abs(transaction.amount);
+            const wallet = transaction.walletId ? transaction.walletId.name : 'N/A';
+            const description = transaction.description || 'N/A';
+
+            return `"${date}","${category}","${amount}","${wallet}","${description}"`;
+          }).join('\n');
+        break;
+
+      default:
+        // Default comprehensive export
+        csvHeader = 'Date,Type,Amount,Category,Wallet,Description,Notes\n';
+        csvData = transactions.map(transaction => {
+          const date = transaction.date.toISOString().split('T')[0];
+          const type = transaction.type;
+          const amount = transaction.amount;
+          const category = transaction.category || 'N/A';
+          const wallet = transaction.walletId ? transaction.walletId.name : 'N/A';
+          const description = transaction.description || 'N/A';
+          const notes = transaction.notes || 'N/A';
+
+          return `"${date}","${type}","${amount}","${category}","${wallet}","${description}","${notes}"`;
+        }).join('\n');
+    }
 
     const csvContent = csvHeader + csvData;
 
     res.setHeader('Content-Type', 'text/csv');
-    res.setHeader('Content-Disposition', 'attachment; filename=transactions-report.csv');
+    res.setHeader('Content-Disposition', `attachment; filename=${reportType || 'transactions'}-report.csv`);
     res.send(csvContent);
   } catch (error) {
     console.error('Export transactions CSV error:', error);
@@ -118,246 +185,237 @@ exports.exportComprehensiveCSV = async (req, res) => {
 };
 
 // ================================
-// Export PDF Report
+// Export PDF Report (Report-specific)
 // ================================
 exports.exportPDFReport = async (req, res) => {
   try {
     const userId = req.user.id;
-    const puppeteer = require('puppeteer');
+    const { reportType } = req.query;
+    const PDFDocument = require('pdfkit');
 
-    // Get user data
-    const [transactions, wallets, budgets, goals, debts] = await Promise.all([
-      Transaction.find({ userId }).populate('walletId', 'name type').limit(100),
-      Wallet.find({ userId }),
-      Budget.find({ userId }).limit(12),
-      Goal.find({ userId }),
-      Debt.find({ userId })
-    ]);
+    let csvHeader = '';
+    let csvData = '';
+    let title = '';
 
-    // Calculate summary statistics
-    const totalIncome = transactions
-      .filter(t => t.type === 'Income')
-      .reduce((sum, t) => sum + t.amount, 0);
+    switch (reportType) {
+      case 'spending':
+        title = 'Spending Analysis Report';
+        const spendingTransactions = await Transaction.find({
+          userId,
+          type: 'Expense'
+        }).populate('walletId', 'name type').sort({ date: -1 });
 
-    const totalExpenses = transactions
-      .filter(t => t.type === 'Expense')
-      .reduce((sum, t) => sum + t.amount, 0);
+        csvHeader = 'Date,Category,Amount,Wallet,Description\n';
+        csvData = spendingTransactions.map(transaction => {
+          const date = transaction.date.toISOString().split('T')[0];
+          const category = transaction.category || 'N/A';
+          const amount = Math.abs(transaction.amount);
+          const wallet = transaction.walletId ? transaction.walletId.name : 'N/A';
+          const description = transaction.description || 'N/A';
 
-    const totalWalletBalance = wallets.reduce((sum, w) => sum + w.balance, 0);
+          return `"${date}","${category}","${amount}","${wallet}","${description}"`;
+        }).join('\n');
+        break;
 
-    const budgetUtilization = budgets.map(budget => ({
-      ...budget.toObject(),
-      utilizationPercentage: budget.budgetedAmount > 0 ? (budget.spentAmount / budget.budgetedAmount) * 100 : 0
-    }));
+      case 'income':
+        title = 'Income Analysis Report';
+        const incomeTransactions = await Transaction.find({
+          userId,
+          type: 'Income'
+        }).populate('walletId', 'name type').sort({ date: -1 });
 
-    // Generate HTML content for PDF
-    const htmlContent = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="UTF-8">
-        <title>BachatBuddy Financial Report</title>
-        <style>
-          body { font-family: Arial, sans-serif; margin: 20px; }
-          .header { text-align: center; margin-bottom: 30px; }
-          .summary { display: flex; justify-content: space-around; margin: 20px 0; }
-          .summary-card { background: #f5f5f5; padding: 15px; border-radius: 8px; text-align: center; }
-          .section { margin: 30px 0; }
-          .section h2 { border-bottom: 2px solid #333; padding-bottom: 5px; }
-          table { width: 100%; border-collapse: collapse; margin: 10px 0; }
-          th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-          th { background-color: #f2f2f2; }
-          .positive { color: green; }
-          .negative { color: red; }
-          .status-active { color: green; }
-          .status-closed { color: gray; }
-          .status-completed { color: blue; }
-        </style>
-      </head>
-      <body>
-        <div class="header">
-          <h1>BachatBuddy</h1>
-          <h2>Personal Finance Report</h2>
-          <p>Generated on ${new Date().toLocaleDateString()}</p>
-        </div>
+        csvHeader = 'Date,Category,Amount,Wallet,Description\n';
+        csvData = incomeTransactions.map(transaction => {
+          const date = transaction.date.toISOString().split('T')[0];
+          const category = transaction.category || 'N/A';
+          const amount = transaction.amount;
+          const wallet = transaction.walletId ? transaction.walletId.name : 'N/A';
+          const description = transaction.description || 'N/A';
 
-        <div class="summary">
-          <div class="summary-card">
-            <h3>Total Income</h3>
-            <p class="positive">₹${totalIncome.toLocaleString()}</p>
-          </div>
-          <div class="summary-card">
-            <h3>Total Expenses</h3>
-            <p class="negative">₹${totalExpenses.toLocaleString()}</p>
-          </div>
-          <div class="summary-card">
-            <h3>Net Balance</h3>
-            <p class="${totalIncome - totalExpenses >= 0 ? 'positive' : 'negative'}">
-              ₹${(totalIncome - totalExpenses).toLocaleString()}
-            </p>
-          </div>
-          <div class="summary-card">
-            <h3>Wallet Balance</h3>
-            <p>₹${totalWalletBalance.toLocaleString()}</p>
-          </div>
-        </div>
+          return `"${date}","${category}","${amount}","${wallet}","${description}"`;
+        }).join('\n');
+        break;
 
-        <div class="section">
-          <h2>Recent Transactions</h2>
-          <table>
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>Type</th>
-                <th>Amount</th>
-                <th>Category</th>
-                <th>Wallet</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${transactions.slice(0, 20).map(t => `
-                <tr>
-                  <td>${t.date.toLocaleDateString()}</td>
-                  <td>${t.type}</td>
-                  <td class="${t.type === 'Income' ? 'positive' : 'negative'}">₹${t.amount.toLocaleString()}</td>
-                  <td>${t.category || 'N/A'}</td>
-                  <td>${t.walletId?.name || 'N/A'}</td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
-        </div>
+      case 'budget':
+        title = 'Budget Performance Report';
+        const budgets = await Budget.find({ userId }).sort({ month: -1 });
 
-        <div class="section">
-          <h2>Wallets</h2>
-          <table>
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Type</th>
-                <th>Balance</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${wallets.map(w => `
-                <tr>
-                  <td>${w.name}</td>
-                  <td>${w.type}</td>
-                  <td>₹${w.balance.toLocaleString()}</td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
-        </div>
+        csvHeader = 'Month,Category,Budgeted,Spent,Remaining,Utilization\n';
+        csvData = budgets.map(budget => {
+          const utilization = budget.amount > 0 ? ((budget.spent || 0) / budget.amount) * 100 : 0;
+          return `"${budget.month}","${budget.category}","${budget.amount}","${budget.spent || 0}","${budget.amount - (budget.spent || 0)}","${utilization.toFixed(1)}%"`;
+        }).join('\n');
+        break;
 
-        <div class="section">
-          <h2>Budget Overview</h2>
-          <table>
-            <thead>
-              <tr>
-                <th>Month</th>
-                <th>Category</th>
-                <th>Budgeted</th>
-                <th>Spent</th>
-                <th>Remaining</th>
-                <th>Utilization</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${budgetUtilization.map(b => `
-                <tr>
-                  <td>${b.month}</td>
-                  <td>${b.category}</td>
-                  <td>₹${b.budgetedAmount.toLocaleString()}</td>
-                  <td>₹${b.spentAmount.toLocaleString()}</td>
-                  <td class="${b.remainingAmount >= 0 ? 'positive' : 'negative'}">₹${b.remainingAmount.toLocaleString()}</td>
-                  <td>${b.utilizationPercentage.toFixed(1)}%</td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
-        </div>
+      case 'savings':
+        title = 'Savings Goals Report';
+        const goals = await Goal.find({ userId });
 
-        <div class="section">
-          <h2>Saving Goals</h2>
-          <table>
-            <thead>
-              <tr>
-                <th>Title</th>
-                <th>Target</th>
-                <th>Saved</th>
-                <th>Remaining</th>
-                <th>Status</th>
-                <th>Deadline</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${goals.map(g => `
-                <tr>
-                  <td>${g.title}</td>
-                  <td>₹${g.targetAmount.toLocaleString()}</td>
-                  <td>₹${g.savedAmount.toLocaleString()}</td>
-                  <td>₹${g.remainingAmount.toLocaleString()}</td>
-                  <td class="status-${g.status}">${g.status}</td>
-                  <td>${g.deadline.toLocaleDateString()}</td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
-        </div>
+        csvHeader = 'Title,Target Amount,Saved Amount,Remaining,Status,Deadline\n';
+        csvData = goals.map(goal => {
+          const remaining = goal.targetAmount - (goal.currentAmount || 0);
+          return `"${goal.title}","${goal.targetAmount}","${goal.currentAmount || 0}","${remaining}","${goal.status}","${goal.deadline.toISOString().split('T')[0]}"`;
+        }).join('\n');
+        break;
 
-        <div class="section">
-          <h2>Debts</h2>
-          <table>
-            <thead>
-              <tr>
-                <th>Title</th>
-                <th>Type</th>
-                <th>Amount</th>
-                <th>Remaining</th>
-                <th>Interest Rate</th>
-                <th>Status</th>
-                <th>Due Date</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${debts.map(d => `
-                <tr>
-                  <td>${d.title}</td>
-                  <td>${d.type}</td>
-                  <td>₹${d.amount.toLocaleString()}</td>
-                  <td>₹${d.remainingAmount.toLocaleString()}</td>
-                  <td>${d.interestRate ? d.interestRate + '%' : 'N/A'}</td>
-                  <td class="status-${d.status}">${d.status}</td>
-                  <td>${d.dueDate.toLocaleDateString()}</td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
-        </div>
-      </body>
-      </html>
-    `;
+      case 'cashflow':
+        title = 'Cash Flow Analysis Report';
+        const cashflowTransactions = await Transaction.find({ userId })
+          .populate('walletId', 'name type').sort({ date: -1 });
 
-    // Launch browser and generate PDF
-    const browser = await puppeteer.launch({
-      headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox']
+        csvHeader = 'Date,Type,Amount,Category,Wallet,Description\n';
+        csvData = cashflowTransactions.map(transaction => {
+          const date = transaction.date.toISOString().split('T')[0];
+          const type = transaction.type;
+          const amount = transaction.amount;
+          const category = transaction.category || 'N/A';
+          const wallet = transaction.walletId ? transaction.walletId.name : 'N/A';
+          const description = transaction.description || 'N/A';
+
+          return `"${date}","${type}","${amount}","${category}","${wallet}","${description}"`;
+        }).join('\n');
+        break;
+
+      case 'category':
+        title = 'Category Analysis Report';
+        const categoryTransactions = await Transaction.find({
+          userId,
+          type: 'Expense'
+        }).populate('walletId', 'name type').sort({ date: -1 });
+
+        csvHeader = 'Date,Category,Amount,Wallet,Description\n';
+        csvData = categoryTransactions.map(transaction => {
+          const date = transaction.date.toISOString().split('T')[0];
+          const category = transaction.category || 'N/A';
+          const amount = Math.abs(transaction.amount);
+          const wallet = transaction.walletId ? transaction.walletId.name : 'N/A';
+          const description = transaction.description || 'N/A';
+
+          return `"${date}","${category}","${amount}","${wallet}","${description}"`;
+        }).join('\n');
+        break;
+
+      default:
+        title = 'Financial Report';
+        const allTransactions = await Transaction.find({ userId })
+          .populate('walletId', 'name type').sort({ date: -1 });
+
+        csvHeader = 'Date,Type,Amount,Category,Wallet,Description\n';
+        csvData = allTransactions.map(transaction => {
+          const date = transaction.date.toISOString().split('T')[0];
+          const type = transaction.type;
+          const amount = transaction.amount;
+          const category = transaction.category || 'N/A';
+          const wallet = transaction.walletId ? transaction.walletId.name : 'N/A';
+          const description = transaction.description || 'N/A';
+
+          return `"${date}","${type}","${amount}","${category}","${wallet}","${description}"`;
+        }).join('\n');
+    }
+
+    // Create PDF document
+    const doc = new PDFDocument();
+    let buffers = [];
+
+    doc.on('data', buffers.push.bind(buffers));
+    doc.on('end', () => {
+      const pdfData = Buffer.concat(buffers);
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename=${reportType || 'financial'}-report.pdf`);
+      res.send(pdfData);
     });
-    const page = await browser.newPage();
-    await page.setContent(htmlContent);
-    const pdfBuffer = await page.pdf({ format: 'A4' });
 
-    await browser.close();
+    // PDF Header
+    doc.fontSize(20).text(title, { align: 'center' });
+    doc.fontSize(12).text(`Generated on ${new Date().toLocaleDateString()}`, { align: 'center' });
+    doc.moveDown(2);
 
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', 'attachment; filename=financial-report.pdf');
-    res.send(pdfBuffer);
+    // Add summary information based on report type
+    doc.fontSize(14).text('Summary', { underline: true });
+    doc.moveDown(0.5);
+
+    if (reportType === 'spending' || reportType === 'income' || reportType === 'cashflow' || reportType === 'category') {
+      const transactions = await Transaction.find({ userId, ...(reportType === 'spending' || reportType === 'category' ? { type: 'Expense' } : reportType === 'income' ? { type: 'Income' } : {}) });
+      const totalAmount = transactions.reduce((sum, t) => sum + Math.abs(t.amount), 0);
+      const avgAmount = transactions.length > 0 ? totalAmount / transactions.length : 0;
+
+      doc.fontSize(10);
+      doc.text(`Total Transactions: ${transactions.length}`);
+      doc.text(`Total Amount: ₹${totalAmount.toLocaleString()}`);
+      doc.text(`Average Amount: ₹${avgAmount.toFixed(2)}`);
+    } else if (reportType === 'budget') {
+      const budgets = await Budget.find({ userId });
+      const totalBudgeted = budgets.reduce((sum, b) => sum + b.amount, 0);
+      const totalSpent = budgets.reduce((sum, b) => sum + (b.spent || 0), 0);
+
+      doc.fontSize(10);
+      doc.text(`Total Budgets: ${budgets.length}`);
+      doc.text(`Total Budgeted: ₹${totalBudgeted.toLocaleString()}`);
+      doc.text(`Total Spent: ₹${totalSpent.toLocaleString()}`);
+      doc.text(`Overall Utilization: ${totalBudgeted > 0 ? ((totalSpent / totalBudgeted) * 100).toFixed(1) : 0}%`);
+    } else if (reportType === 'savings') {
+      const goals = await Goal.find({ userId });
+      const totalTarget = goals.reduce((sum, g) => sum + g.targetAmount, 0);
+      const totalSaved = goals.reduce((sum, g) => sum + (g.currentAmount || 0), 0);
+      const completedGoals = goals.filter(g => (g.currentAmount || 0) >= g.targetAmount).length;
+
+      doc.fontSize(10);
+      doc.text(`Total Goals: ${goals.length}`);
+      doc.text(`Completed Goals: ${completedGoals}`);
+      doc.text(`Total Target: ₹${totalTarget.toLocaleString()}`);
+      doc.text(`Total Saved: ₹${totalSaved.toLocaleString()}`);
+      doc.text(`Overall Progress: ${totalTarget > 0 ? ((totalSaved / totalTarget) * 100).toFixed(1) : 0}%`);
+    }
+
+    doc.moveDown(1);
+
+    // Add data section
+    doc.fontSize(14).text('Data Export', { underline: true });
+    doc.moveDown(0.5);
+    doc.fontSize(8);
+
+    // Split CSV data into lines and add to PDF
+    const lines = csvData.split('\n');
+    const headerLine = lines[0];
+    const dataLines = lines.slice(1);
+
+    // Add header
+    doc.font('Helvetica-Bold');
+    headerLine.split(',').forEach((header, index) => {
+      doc.text(header.replace(/"/g, ''), 50 + (index * 100), doc.y);
+    });
+    doc.moveDown(0.5);
+
+    // Add data rows (limit to prevent PDF from being too large)
+    doc.font('Helvetica');
+    dataLines.slice(0, 50).forEach((line, rowIndex) => {
+      if (line.trim()) {
+        line.split(',').forEach((cell, colIndex) => {
+          doc.text(cell.replace(/"/g, ''), 50 + (colIndex * 100), doc.y);
+        });
+        doc.moveDown(0.3);
+
+        // Add page break if needed
+        if (doc.y > 700) {
+          doc.addPage();
+          doc.moveDown(1);
+        }
+      }
+    });
+
+    if (dataLines.length > 50) {
+      doc.fontSize(10).text(`... and ${dataLines.length - 50} more rows`, { align: 'center' });
+    }
+
+    // Finalize PDF
+    doc.end();
+
   } catch (error) {
     console.error('Export PDF error:', error);
     res.status(500).json({
       status: 'error',
-      message: 'Failed to export PDF report'
+      message: 'Failed to export PDF report',
+      error: error.message
     });
   }
 };

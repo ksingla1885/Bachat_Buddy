@@ -18,11 +18,61 @@ const DebtTracker = () => {
     description: ''
   });
 
+  const [deleteModal, setDeleteModal] = useState({
+    show: false,
+    debt: null
+  });
+
   const [paymentModal, setPaymentModal] = useState({
     show: false,
     debt: null,
     amount: ''
   });
+
+  const calculateMonthlyInterest = (debt) => {
+    if (!debt.interestRate || debt.interestRate === 0) {
+      return 0;
+    }
+
+    const monthlyRate = debt.interestRate / 100 / 12;
+    const monthlyInterest = debt.remainingAmount * monthlyRate;
+
+    return Math.round(monthlyInterest * 100) / 100; // Round to 2 decimal places
+  };
+
+  const handleCalculateInterest = (debt) => {
+    const monthlyInterest = calculateMonthlyInterest(debt);
+    const newTotal = debt.remainingAmount + monthlyInterest;
+
+    setInterestCalculation({
+      principal: debt.remainingAmount,
+      interestRate: debt.interestRate,
+      monthlyInterest: monthlyInterest,
+      newTotal: newTotal,
+      totalIncrease: monthlyInterest,
+      debtId: debt._id
+    });
+  };
+
+  const handleConfirmInterestCalculation = async () => {
+    if (!interestCalculation) return;
+
+    try {
+      await api.updateDebtInterest(interestCalculation.debtId, {
+        monthlyInterest: interestCalculation.monthlyInterest,
+        newRemainingAmount: interestCalculation.newTotal
+      });
+
+      setSuccessMessage(`Interest calculated: ₹${interestCalculation.monthlyInterest.toFixed(2)} added to debt`);
+      setInterestCalculation(null);
+      fetchDebts();
+      fetchDebtStats();
+      setTimeout(() => setSuccessMessage(''), 3000);
+    } catch (err) {
+      console.error("Interest calculation error:", err.response?.data || err.message);
+      setError(err.response?.data?.message || 'Error calculating interest');
+    }
+  };
 
   useEffect(() => {
     fetchDebts();
@@ -76,17 +126,61 @@ const DebtTracker = () => {
   };
 
   const handleDeleteDebt = async (debtId) => {
-    if (!confirm('Are you sure you want to delete this debt?')) return;
+    const debt = debts.find(d => d._id === debtId);
+    console.log('🗑️ Attempting to delete debt:', debt);
+    console.log('Debt status:', debt?.status);
+    console.log('Debt ID:', debtId);
+
+    if (!debt) {
+      console.error('❌ Debt not found for deletion');
+      setError('Debt not found');
+      return;
+    }
+
+    // Double-check that debt is closed before showing modal
+    if (debt.status !== 'closed') {
+      console.error('❌ Cannot delete active debt:', debt.status);
+      setError('Only closed debts can be deleted. Please pay off this debt first.');
+      return;
+    }
+
+    setDeleteModal({ show: true, debt: debt });
+  };
+
+  const confirmDeleteDebt = async () => {
+    if (!deleteModal.debt) {
+      console.error('❌ No debt selected for deletion');
+      return;
+    }
+
+    console.log('🗑️ Confirming deletion of debt:', deleteModal.debt);
 
     try {
-      await api.deleteDebt(debtId);
+      console.log('🔄 Calling delete API...');
+      await api.deleteDebt(deleteModal.debt._id);
+      console.log('✅ Debt deleted successfully');
+
       setSuccessMessage('Debt deleted successfully!');
+      setDeleteModal({ show: false, debt: null });
       fetchDebts();
       fetchDebtStats();
       setTimeout(() => setSuccessMessage(''), 3000);
     } catch (err) {
-      console.error("Delete debt error:", err.response?.data || err.message);
-      setError(err.response?.data?.message || 'Error deleting debt');
+      console.error("❌ Delete debt error:", err.response?.data || err.message);
+      console.error("❌ Full error object:", err);
+
+      let errorMessage = 'Error deleting debt';
+      if (err.response?.status === 401) {
+        errorMessage = 'Authentication failed - please log in again';
+      } else if (err.response?.status === 403) {
+        errorMessage = 'You do not have permission to delete this debt';
+      } else if (err.response?.status === 404) {
+        errorMessage = 'Debt not found - it may have already been deleted';
+      } else if (err.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      }
+
+      setError(errorMessage);
     }
   };
 
@@ -147,19 +241,33 @@ const DebtTracker = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Debt Tracker</h1>
-          <p className="text-gray-600 dark:text-gray-300">Manage your loans and debts</p>
+      <div className="text-center py-8 px-4">
+        <h1 className="text-4xl font-bold mb-2">
+          <span className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+            Debt Tracker
+          </span>
+        </h1>
+        <p className="text-gray-600 dark:text-gray-400 text-lg">
+          Manage your loans and debts
+        </p>
+        <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg max-w-2xl mx-auto">
+          <p className="text-sm text-blue-800 dark:text-blue-200">
+            💡 <strong>Debt Deletion Policy:</strong> Only fully paid-off (closed) debts can be deleted.
+            Active debts must be paid off first before deletion is allowed.
+          </p>
         </div>
+      </div>
+
+      {/* Action Bar */}
+      <div className="flex flex-col sm:flex-row justify-end gap-4 mb-8">
         <button
           onClick={() => setIsCreating(true)}
-          className="btn-primary"
+          className="btn-primary flex items-center space-x-2"
         >
-          <svg className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
           </svg>
-          Add Debt
+          <span>Add Debt</span>
         </button>
       </div>
 
@@ -230,8 +338,33 @@ const DebtTracker = () => {
       )}
 
       {error && (
-        <div className="bg-red-100 dark:bg-red-900 border border-red-200 dark:border-red-700 text-red-700 dark:text-red-300 px-4 py-3 rounded-xl">
-          {error}
+        <div className="bg-red-100 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 px-4 py-3 rounded-xl mb-6">
+          <div className="flex items-start space-x-3">
+            <svg className="w-5 h-5 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <div className="flex-1">
+              <p className="font-medium">{error}</p>
+              <div className="mt-3 flex space-x-3">
+                <button
+                  onClick={() => {
+                    fetchDebts();
+                    setError('');
+                  }}
+                  className="text-sm bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded"
+                >
+                  Retry
+                </button>
+                <a
+                  href="/DEBT_DELETE_FIX_README.md"
+                  target="_blank"
+                  className="text-sm bg-gray-600 hover:bg-gray-700 text-white px-3 py-1 rounded"
+                >
+                  Troubleshooting Guide
+                </a>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
@@ -446,29 +579,34 @@ const DebtTracker = () => {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full">
+            <table className="w-full min-w-[800px]">
               <thead className="bg-gray-50 dark:bg-gray-700">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                  <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hidden sm:table-cell">
                     Title
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                  <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hidden md:table-cell">
                     Type
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                  <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                     Amount
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                  <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hidden sm:table-cell">
                     Remaining
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                  <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hidden sm:table-cell">
+                    Due Date
+                  </th>
+                  <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hidden md:table-cell">
                     Interest Rate
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                    Due Date
+                  <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hidden lg:table-cell">
+                    Monthly Interest
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                     Status
+                    <div className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                    </div>
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                     Actions
@@ -478,7 +616,7 @@ const DebtTracker = () => {
               <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                 {debts.map((debt) => (
                   <tr key={debt._id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-3 py-4 hidden sm:table-cell">
                       <div className="text-sm font-medium text-gray-900 dark:text-white">
                         {debt.title}
                       </div>
@@ -488,44 +626,84 @@ const DebtTracker = () => {
                         </div>
                       )}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="text-sm text-gray-900 dark:text-white capitalize">
-                        {debt.type}
+                    <td className="px-3 py-4 hidden md:table-cell">
+                      <span className="text-sm text-gray-900 dark:text-white">
+                        {debt.type === 'personal' && '💰 '}
+                        {debt.type === 'creditCard' && '💳 '}
+                        {debt.type === 'loan' && '🏠 '}
+                        {debt.type === 'business' && '💼 '}
+                        {debt.type === 'education' && '🎓 '}
+                        {debt.type === 'vehicle' && '🚗 '}
+                        {debt.type === 'other' && '📋 '}
+                        {debt.type === 'personal' ? 'Personal Loan' :
+                         debt.type === 'creditCard' ? 'Credit Card' :
+                         debt.type === 'loan' ? 'Bank Loan' :
+                         debt.type === 'business' ? 'Business Loan' :
+                         debt.type === 'education' ? 'Education Loan' :
+                         debt.type === 'vehicle' ? 'Vehicle Loan' :
+                         debt.type.charAt(0).toUpperCase() + debt.type.slice(1)}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                    <td className="px-3 py-4 text-sm text-gray-900 dark:text-white">
                       {formatCurrency(debt.amount)}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                    <td className="px-3 py-4 hidden sm:table-cell text-sm text-gray-900 dark:text-white">
                       {formatCurrency(debt.remainingAmount)}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                      {debt.interestRate ? `${debt.interestRate}%` : 'N/A'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                    <td className="px-3 py-4 hidden sm:table-cell text-sm text-gray-900 dark:text-white">
                       {formatDate(debt.dueDate)}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {getStatusBadge(debt)}
+                    <td className="px-3 py-4 hidden md:table-cell text-sm text-gray-900 dark:text-white">
+                      {debt.interestRate ? `${debt.interestRate}%` : 'N/A'}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <td className="px-3 py-4 hidden lg:table-cell text-sm text-gray-900 dark:text-white">
+                      {debt.interestRate > 0 ? formatCurrency(calculateMonthlyInterest(debt)) : 'N/A'}
+                    </td>
+                    <td className="px-3 py-4">
+                      {getStatusBadge(debt)}
+                      {debt.status === 'active' && (
+                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                          {/* 💳 Pay to close */}
+                        </div>
+                      )}
+                      {/* {debt.status === 'closed' && (
+                        <div className="text-xs text-green-600 dark:text-green-400 mt-1">
+                          ✅ Can delete
+                        </div>
+                      )} */}
+                    </td>
+                    <td className="px-3 py-4 text-sm font-medium">
                       <div className="flex space-x-2">
-                        <button
-                          onClick={() => setPaymentModal({
-                            show: true,
-                            debt: debt,
-                            amount: ''
-                          })}
-                          className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
-                        >
-                          Pay
-                        </button>
-                        <button
-                          onClick={() => handleDeleteDebt(debt._id)}
-                          className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
-                        >
-                          Delete
-                        </button>
+                        {debt.status !== 'closed' && (
+                          <button
+                            onClick={() => setPaymentModal({
+                              show: true,
+                              debt: debt,
+                              amount: ''
+                            })}
+                            className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
+                          >
+                            Pay
+                          </button>
+                        )}
+                        {debt.interestRate > 0 && debt.status !== 'closed' && (
+                          <button
+                            onClick={() => handleCalculateInterest(debt)}
+                            className="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300"
+                            title="Calculate Monthly Interest"
+                          >
+                            📈
+                          </button>
+                        )}
+                        {debt.status === 'closed' && (
+                          <button
+                            onClick={() => handleDeleteDebt(debt._id)}
+                            className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
+                            title="Delete closed debt"
+                          >
+                            🗑️ Delete
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -571,6 +749,69 @@ const DebtTracker = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteModal.show && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 w-full max-w-md">
+            <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">
+              Delete Closed Debt
+            </h3>
+            <div className="mb-4">
+              <p className="text-gray-600 dark:text-gray-300 mb-2">
+                Are you sure you want to permanently delete this closed debt?
+              </p>
+              <div className="bg-green-50 dark:bg-green-900/20 p-3 rounded-lg border border-green-200 dark:border-green-800">
+                <p className="font-medium text-gray-900 dark:text-white">
+                  {deleteModal.debt?.title}
+                </p>
+                <p className="text-sm text-gray-600 dark:text-gray-300">
+                  Type: {deleteModal.debt?.type === 'personal' && '💰 '}
+                  {deleteModal.debt?.type === 'creditCard' && '💳 '}
+                  {deleteModal.debt?.type === 'loan' && '🏠 '}
+                  {deleteModal.debt?.type === 'business' && '💼 '}
+                  {deleteModal.debt?.type === 'education' && '🎓 '}
+                  {deleteModal.debt?.type === 'vehicle' && '🚗 '}
+                  {deleteModal.debt?.type === 'other' && '📋 '}
+                  {deleteModal.debt?.type === 'personal' ? 'Personal Loan' :
+                   deleteModal.debt?.type === 'creditCard' ? 'Credit Card' :
+                   deleteModal.debt?.type === 'loan' ? 'Bank Loan' :
+                   deleteModal.debt?.type === 'business' ? 'Business Loan' :
+                   deleteModal.debt?.type === 'education' ? 'Education Loan' :
+                   deleteModal.debt?.type === 'vehicle' ? 'Vehicle Loan' :
+                   deleteModal.debt?.type?.charAt(0).toUpperCase() + deleteModal.debt?.type?.slice(1) || 'N/A'}
+                </p>
+                <p className="text-sm text-green-600 dark:text-green-400 font-medium">
+                  ✅ Status: Closed (Fully Paid Off)
+                </p>
+                <p className="text-sm text-gray-600 dark:text-gray-300">
+                  Due Date: {deleteModal.debt?.dueDate ? formatDate(deleteModal.debt.dueDate) : 'N/A'}
+                </p>
+                <p className="text-sm text-gray-600 dark:text-gray-300">
+                  Original Amount: {formatCurrency(deleteModal.debt?.amount || 0)}
+                </p>
+              </div>
+              <p className="text-sm text-red-600 dark:text-red-400 mt-2">
+                ⚠️ This action cannot be undone. The debt record will be permanently deleted.
+              </p>
+            </div>
+            <div className="flex space-x-3">
+              <button
+                onClick={confirmDeleteDebt}
+                className="btn-primary bg-red-600 hover:bg-red-700 flex-1"
+              >
+                Yes, Delete Forever
+              </button>
+              <button
+                onClick={() => setDeleteModal({ show: false, debt: null })}
+                className="btn-secondary flex-1"
+              >
+                Cancel
+              </button>
+            </div>
           </div>
         </div>
       )}

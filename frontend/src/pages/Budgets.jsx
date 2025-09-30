@@ -5,6 +5,8 @@ import BudgetForm from "../components/BudgetForm";
 const Budgets = () => {
   const [budgets, setBudgets] = useState([]);
   const [isCreating, setIsCreating] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingBudget, setEditingBudget] = useState(null);
   const [currentMonth, setCurrentMonth] = useState(() => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
@@ -70,14 +72,39 @@ const Budgets = () => {
     }
   };
 
-  const handleCreateBudget = async (data) => {
+  const handleEditBudget = (budget) => {
+    console.log('Editing budget:', budget); // Debug: Check budget structure
+
+    // Ensure all required fields are properly mapped for the form
+    const formData = {
+      category: budget.category || '',
+      amount: budget.amount || 0,
+      alertThreshold: (budget.alertThreshold || 0.8) * 100, // Convert fraction to percentage
+      monthYear: `${budget.year}-${String(budget.month).padStart(2, '0')}`,
+      year: budget.year,
+      month: budget.month
+    };
+
+    console.log('Form data mapping:', formData); // Debug: Check form data mapping
+
+    setEditingBudget({
+      ...budget,
+      ...formData // Override with form-compatible data
+    });
+    setIsEditing(true);
+  };
+
+  const handleUpdateBudget = async (data) => {
     try {
       const [year, month] = currentMonth.split("-").map(Number);
-      await api.createBudget({ ...data, month, year });
-      setIsCreating(false);
-      fetchBudgets();
+      await api.updateBudget(editingBudget._id, { ...data, month, year });
+      setIsEditing(false);
+      setEditingBudget(null);
+      await fetchBudgets();
+      setInfoMessage('Budget updated successfully!');
+      setTimeout(() => setInfoMessage(''), 3000);
     } catch (err) {
-      setError(err.response?.data?.message || "Error creating budget");
+      setError(err.response?.data?.message || 'Error updating budget');
     }
   };
 
@@ -172,10 +199,11 @@ const Budgets = () => {
   return (
     <div className="space-y-8 animate-fadeInUp">
       {/* Header Section */}
-      <div className="text-center py-8">
-        <h1 className="text-4xl font-bold text-gradient mb-2 flex items-center justify-center">
-          {/* <span className="mr-3">📊</span> */}
-          Budget Management
+      <div className="text-center py-8 px-4">
+        <h1 className="text-4xl font-bold mb-2">
+          <span className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+            Budget Management
+          </span>
         </h1>
         <p className="text-gray-600 dark:text-gray-400 text-lg">
           Plan and track your monthly spending goals
@@ -333,6 +361,40 @@ const Budgets = () => {
         </div>
       )}
 
+      {/* Edit Budget Form */}
+      {isEditing && editingBudget && (
+        <div className="card-modern p-8 mb-8 animate-fadeInUp">
+          <div className="text-center mb-6">
+            <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center mx-auto mb-4">
+              <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+              </svg>
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+              ✏️ Edit Budget
+            </h2>
+            <p className="text-gray-600 dark:text-gray-400">
+              Update your budget amount and category
+            </p>
+          </div>
+          <BudgetForm onSubmit={handleUpdateBudget} initialData={editingBudget} />
+          <div className="flex justify-center mt-6">
+            <button
+              onClick={() => {
+                setIsEditing(false);
+                setEditingBudget(null);
+              }}
+              className="btn-secondary flex items-center space-x-2"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+              <span>Cancel</span>
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Budgets Table */}
       <div className="card-modern overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
@@ -443,20 +505,33 @@ const Budgets = () => {
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right">
-                        {budgets.find((b) => b.category === item.category) && (
+                        <div className="flex items-center justify-end space-x-2">
                           <button
-                            onClick={() => handleDeleteBudget(
-                              budgets.find((b) => b.category === item.category)._id,
-                              item.category
+                            onClick={() => handleEditBudget(
+                              budgets.find((b) => b.category === item.category)
                             )}
-                            className="inline-flex items-center px-3 py-1 text-xs font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/40 rounded-lg transition-colors duration-200 group"
+                            className="inline-flex items-center px-3 py-1 text-xs font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/40 rounded-lg transition-colors duration-200 group"
                           >
                             <svg className="w-4 h-4 mr-1 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                             </svg>
-                            Delete
+                            <span className="group-hover:scale-105 transition-transform">Edit</span>
                           </button>
-                        )}
+                          {budgets.find((b) => b.category === item.category) && (
+                            <button
+                              onClick={() => handleDeleteBudget(
+                                budgets.find((b) => b.category === item.category)._id,
+                                item.category
+                              )}
+                              className="inline-flex items-center px-3 py-1 text-xs font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/40 rounded-lg transition-colors duration-200 group"
+                            >
+                              <svg className="w-4 h-4 mr-1 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
+                              <span className="group-hover:scale-105 transition-transform">Delete</span>
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   );

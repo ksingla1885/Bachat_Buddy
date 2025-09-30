@@ -1,10 +1,23 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import Footer from '../components/Footer';
 import { contactService } from '../services/contactService';
+import { useAuth } from '../contexts/AuthContext';
 
 function Landing() {
-  // Contact form state
+  const { user } = useAuth();
+  const navigate = useNavigate();
+
+  // Handle Get Started button click
+  const handleGetStarted = () => {
+    if (user) {
+      // User is logged in, redirect to dashboard
+      navigate('/dashboard');
+    } else {
+      // User is not logged in, redirect to signup
+      navigate('/signup');
+    }
+  };
   const [contactForm, setContactForm] = useState({
     fullName: '',
     email: '',
@@ -343,12 +356,14 @@ function Landing() {
                 <span className="text-white font-bold text-4xl">₹</span>
               </div>
               <h1
-                className="text-5xl md:text-7xl font-bold text-gradient mb-6"
+                className="text-4xl md:text-6xl font-bold mb-6"
                 style={{
                   transform: `translate3d(${mousePosition.x * 2}px, ${mousePosition.y * 2}px, 0)`,
                 }}
               >
-                BachatBuddy
+                <span className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+                  BachatBuddy
+                </span>
               </h1>
               <p className="text-xl md:text-2xl text-gray-600 dark:text-gray-300 mb-8 max-w-3xl mx-auto">
                 Your Smart Financial Companion for Better Money Management
@@ -365,16 +380,16 @@ function Landing() {
                 transform: `translate3d(${mousePosition.x * 3}px, ${mousePosition.y * 3}px, 0)`,
               }}
             >
-              <Link
-                to="/signup"
+              <button
+                onClick={handleGetStarted}
                 className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-8 py-4 rounded-xl font-semibold text-lg hover:from-blue-600 hover:to-purple-700 transform hover:scale-105 hover:-translate-y-1 transition-all duration-300 shadow-large hover:shadow-2xl"
                 style={{
                   transform: `perspective(1000px) rotateX(${mousePosition.y * 5}deg) rotateY(${mousePosition.x * 5}deg) scale(${isVisible.hero ? 1 : 0.8})`,
                 }}
               >
                 <span className="mr-2">🚀</span>
-                Get Started Free
-              </Link>
+                {user ? 'Go to Dashboard' : 'Get Started Free'}
+              </button>
               <Link
                 to="/login"
                 className="border-2 border-white text-white bg-transparent px-8 py-4 rounded-xl font-semibold text-lg hover:bg-white hover:text-blue-600 transform hover:scale-105 hover:-translate-y-1 transition-all duration-300 backdrop-blur-sm"
@@ -1062,8 +1077,8 @@ function Landing() {
               transform: `translate3d(${mousePosition.x * 3}px, ${mousePosition.y * 3}px, 0)`,
             }}
           >
-            <Link
-              to="/signup"
+            <button
+              onClick={handleGetStarted}
               className="bg-white text-blue-600 px-8 py-4 rounded-xl font-semibold text-lg hover:bg-gray-100 transform hover:scale-105 hover:-translate-y-1 transition-all duration-300 shadow-large hover:shadow-2xl relative overflow-hidden group"
               style={{
                 transform: `perspective(1000px) rotateX(${mousePosition.y * 5}deg) rotateY(${mousePosition.x * 5}deg)`,
@@ -1072,8 +1087,8 @@ function Landing() {
               {/* 3D button effect */}
               <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-purple-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
               <span className="mr-2 relative z-10">🚀</span>
-              <span className="relative z-10">Start Your Journey</span>
-            </Link>
+              <span className="relative z-10">{user ? 'Go to Dashboard' : 'Start Your Journey'}</span>
+            </button>
             <Link
               to="/login"
               className="border-2 border-white text-white px-8 py-4 rounded-xl font-semibold text-lg hover:bg-white hover:text-blue-600 transform hover:scale-105 hover:-translate-y-1 transition-all duration-300 backdrop-blur-sm relative overflow-hidden group"

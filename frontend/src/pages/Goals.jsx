@@ -1,209 +1,662 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import * as api from '../services/api';
+import { format } from 'date-fns';
 
 function Goals() {
+  const [goals, setGoals] = useState([]);
+  const [stats, setStats] = useState({});
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showSavingsModal, setShowSavingsModal] = useState(false);
+  const [selectedGoal, setSelectedGoal] = useState(null);
+  const [activeTab, setActiveTab] = useState('all');
+
+  const [newGoal, setNewGoal] = useState({
+    title: '',
+    description: '',
+    targetAmount: '',
+    deadline: '',
+    category: 'other'
+  });
+
+  const [savingsAmount, setSavingsAmount] = useState('');
+
+  useEffect(() => {
+    fetchGoals();
+    fetchGoalStats();
+  }, []);
+
+  const calculateGoalProgress = (goal) => {
+    const saved = parseFloat(goal.savedAmount) || 0;
+    const target = parseFloat(goal.targetAmount) || 1; // Avoid division by zero
+    const remaining = Math.max(0, target - saved);
+    const progressPercentage = Math.min((saved / target) * 100, 100);
+    
+    return {
+      ...goal,
+      savedAmount: saved,
+      targetAmount: target,
+      remainingAmount: remaining,
+      progressPercentage: progressPercentage,
+      status: progressPercentage >= 100 ? 'completed' : goal.status || 'in-progress'
+    };
+  };
+
+  const fetchGoals = async () => {
+    try {
+      setIsLoading(true);
+      const response = await api.getGoals({ limit: 100 });
+      
+      // Process goals to include calculated fields
+      const processedGoals = response.data.data.map(goal => calculateGoalProgress(goal));
+      
+      setGoals(processedGoals);
+      setError('');
+    } catch (err) {
+      console.error('Fetch goals error:', err.response?.data || err.message);
+      setError(err.response?.data?.message || 'Error fetching goals');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const fetchGoalStats = async () => {
+    try {
+      const response = await api.getGoalStats();
+      setStats(response.data.data);
+    } catch (err) {
+      console.error('Fetch goal stats error:', err.response?.data || err.message);
+    }
+  };
+
+  const handleCreateGoal = async (e) => {
+    e.preventDefault();
+    try {
+      await api.createGoal(newGoal);
+      setShowCreateModal(false);
+      setNewGoal({
+        title: '',
+        description: '',
+        targetAmount: '',
+        deadline: '',
+        category: 'other'
+      });
+      setSuccessMessage('Goal created successfully!');
+      fetchGoals();
+      fetchGoalStats();
+      setTimeout(() => setSuccessMessage(''), 3000);
+    } catch (err) {
+      console.error('Create goal error:', err.response?.data || err.message);
+      setError(err.response?.data?.message || 'Error creating goal');
+    }
+  };
+
+  const handleAddSavings = async (e) => {
+    e.preventDefault();
+    if (!selectedGoal || !savingsAmount) return;
+
+    try {
+      const amount = parseFloat(savingsAmount);
+      if (isNaN(amount) || amount <= 0) {
+        setError('Please enter a valid amount');
+        return;
+      }
+
+      await api.addSavingsToGoal(selectedGoal._id, { amount });
+      setShowSavingsModal(false);
+      setSavingsAmount('');
+      setSelectedGoal(null);
+      setSuccessMessage('Savings added successfully!');
+      
+      // Refresh the goals to get updated data
+      await fetchGoals();
+      await fetchGoalStats();
+      
+      setTimeout(() => setSuccessMessage(''), 3000);
+    } catch (err) {
+      console.error('Add savings error:', err.response?.data || err.message);
+      setError(err.response?.data?.message || 'Error adding savings');
+    }
+  };
+
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [goalToDelete, setGoalToDelete] = useState(null);
+
+  const handleDeleteClick = (goalId) => {
+    setGoalToDelete(goalId);
+    setShowDeleteModal(true);
+  };
+
+  const handleDeleteGoal = async () => {
+    if (!goalToDelete) return;
+    
+    try {
+      const response = await api.deleteGoal(goalToDelete);
+      if (response.status === 200) {
+        setSuccessMessage('Goal deleted successfully!');
+        await fetchGoals();
+        await fetchGoalStats();
+      }
+    } catch (err) {
+      console.error('Delete goal error:', err.response?.data || err.message);
+      setError(err.response?.data?.message || 'Error deleting goal');
+    } finally {
+      setShowDeleteModal(false);
+      setGoalToDelete(null);
+      setTimeout(() => setSuccessMessage(''), 3000);
+    }
+  };
+
+  const filteredGoals = goals.filter(goal => {
+    if (activeTab === 'all') return true;
+    if (activeTab === 'in-progress') return goal.status === 'in-progress';
+    if (activeTab === 'completed') return goal.status === 'completed';
+    return true;
+  });
+
+  const formatCurrency = (amount) => {
+    // Convert to number and handle NaN/undefined/null cases
+    const numAmount = Number(amount);
+    if (isNaN(numAmount) || numAmount === 0) {
+      return new Intl.NumberFormat('en-IN', {
+        style: 'currency',
+        currency: 'INR',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      }).format(0);
+    }
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(numAmount);
+  };
+
+  const getProgressColor = (progress) => {
+    if (progress >= 100) return 'bg-green-500';
+    if (progress >= 75) return 'bg-blue-500';
+    if (progress >= 50) return 'bg-yellow-500';
+    return 'bg-orange-500';
+  };
+
+  const getCategoryIcon = (category) => {
+    const icons = {
+      emergency: '🚨',
+      vacation: '🏖️',
+      car: '🚗',
+      house: '🏠',
+      education: '📚',
+      investment: '📈',
+      other: '🎯'
+    };
+    return icons[category] || icons.other;
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-96">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8">
-      {/* Hero Section */}
-      <div className="text-center space-y-6 py-8">
-        <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full shadow-lg">
-          <span className="text-3xl">🎯</span>
-        </div>
-
-        <div className="space-y-4">
-          <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-yellow-600 to-orange-600 bg-clip-text text-transparent">
-            Saving Goals
+      {/* Header Section */}
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 px-4">
+        <div className="space-y-2">
+          <h1 className="text-4xl font-bold">
+            <span className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+              Saving Goals
+            </span>
           </h1>
-          <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
-            Set financial targets, track your progress, and achieve your dreams with our comprehensive goal-setting system.
+          <p className="text-gray-600 dark:text-gray-300">
+            Set financial targets, track your progress, and achieve your dreams
           </p>
-          <div className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-full font-semibold shadow-lg">
-            🚧 Coming Soon
+        </div>
+        <button
+          onClick={() => setShowCreateModal(true)}
+          className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2"
+        >
+          <span>🎯</span>
+          Create New Goal
+        </button>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-200 dark:border-gray-700">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-gray-600 dark:text-gray-400 text-sm">Total Goals</p>
+              <p className="text-3xl font-bold text-gray-900 dark:text-white">{stats.totalGoals || 0}</p>
+            </div>
+            <div className="w-12 h-12 bg-gradient-to-r from-blue-400 to-blue-600 rounded-xl flex items-center justify-center">
+              <span className="text-xl">🎯</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-200 dark:border-gray-700">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-gray-600 dark:text-gray-400 text-sm">Completed</p>
+              <p className="text-3xl font-bold text-green-600">{stats.completedGoals || 0}</p>
+            </div>
+            <div className="w-12 h-12 bg-gradient-to-r from-green-400 to-green-600 rounded-xl flex items-center justify-center">
+              <span className="text-xl">✅</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-200 dark:border-gray-700">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-gray-600 dark:text-gray-400 text-sm">Total Saved</p>
+              <p className="text-3xl font-bold text-blue-600">{formatCurrency(stats.totalSaved || 0)}</p>
+            </div>
+            <div className="w-12 h-12 bg-gradient-to-r from-purple-400 to-purple-600 rounded-xl flex items-center justify-center">
+              <span className="text-xl">💰</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-200 dark:border-gray-700">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-gray-600 dark:text-gray-400 text-sm">Success Rate</p>
+              <p className="text-3xl font-bold text-orange-600">{stats.successRate || 0}%</p>
+            </div>
+            <div className="w-12 h-12 bg-gradient-to-r from-orange-400 to-orange-600 rounded-xl flex items-center justify-center">
+              <span className="text-xl">📈</span>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Features Preview */}
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {/* Goal Setting */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-200 dark:border-gray-700 hover:shadow-xl transition-all duration-300">
-          <div className="w-12 h-12 bg-gradient-to-r from-green-400 to-blue-500 rounded-xl flex items-center justify-center mb-4">
-            <span className="text-xl">🎯</span>
-          </div>
-          <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">
-            Smart Goal Setting
-          </h3>
-          <p className="text-gray-600 dark:text-gray-300">
-            Create specific, measurable, achievable, relevant, and time-bound (SMART) financial goals with our intelligent goal-setting wizard.
-          </p>
-        </div>
-
-        {/* Progress Tracking */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-200 dark:border-gray-700 hover:shadow-xl transition-all duration-300">
-          <div className="w-12 h-12 bg-gradient-to-r from-purple-400 to-pink-500 rounded-xl flex items-center justify-center mb-4">
-            <span className="text-xl">📊</span>
-          </div>
-          <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">
-            Progress Tracking
-          </h3>
-          <p className="text-gray-600 dark:text-gray-300">
-            Monitor your progress with beautiful charts and visualizations. See exactly how close you are to achieving your financial targets.
-          </p>
-        </div>
-
-        {/* Automated Savings */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-200 dark:border-gray-700 hover:shadow-xl transition-all duration-300">
-          <div className="w-12 h-12 bg-gradient-to-r from-orange-400 to-red-500 rounded-xl flex items-center justify-center mb-4">
-            <span className="text-xl">💰</span>
-          </div>
-          <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">
-            Automated Savings
-          </h3>
-          <p className="text-gray-600 dark:text-gray-300">
-            Set up automatic transfers to your goal accounts. Round-up transactions and save the difference effortlessly.
-          </p>
-        </div>
-
-        {/* Milestone Celebrations */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-200 dark:border-gray-700 hover:shadow-xl transition-all duration-300">
-          <div className="w-12 h-12 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-xl flex items-center justify-center mb-4">
-            <span className="text-xl">🎉</span>
-          </div>
-          <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">
-            Milestone Celebrations
-          </h3>
-          <p className="text-gray-600 dark:text-gray-300">
-            Celebrate your achievements with badges, rewards, and gamification elements that make saving fun and motivating.
-          </p>
-        </div>
-
-        {/* Goal Categories */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-200 dark:border-gray-700 hover:shadow-xl transition-all duration-300">
-          <div className="w-12 h-12 bg-gradient-to-r from-indigo-400 to-purple-500 rounded-xl flex items-center justify-center mb-4">
-            <span className="text-xl">🏷️</span>
-          </div>
-          <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">
-            Goal Categories
-          </h3>
-          <p className="text-gray-600 dark:text-gray-300">
-            Organize your goals by categories like emergency fund, vacation, home purchase, education, and custom categories.
-          </p>
-        </div>
-
-        {/* Notifications & Reminders */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-200 dark:border-gray-700 hover:shadow-xl transition-all duration-300">
-          <div className="w-12 h-12 bg-gradient-to-r from-blue-400 to-cyan-500 rounded-xl flex items-center justify-center mb-4">
-            <span className="text-xl">🔔</span>
-          </div>
-          <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">
-            Smart Notifications
-          </h3>
-          <p className="text-gray-600 dark:text-gray-300">
-            Get reminded about your goals, receive progress updates, and stay motivated with personalized notifications.
-          </p>
-        </div>
-      </div>
-
-      {/* Coming Soon Message */}
-      <div className="bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl p-8 text-center text-white shadow-xl">
-        <h2 className="text-2xl font-bold mb-4">🚀 Exciting Features Coming Soon!</h2>
-        <p className="text-lg opacity-90 mb-6">
-          We're working hard to bring you the most comprehensive goal-setting and achievement tracking system.
-          Stay tuned for these amazing features!
-        </p>
-        <div className="flex flex-wrap justify-center gap-4 text-sm">
-          <span className="bg-white/20 px-4 py-2 rounded-full">Multi-Goal Management</span>
-          <span className="bg-white/20 px-4 py-2 rounded-full">Progress Analytics</span>
-          <span className="bg-white/20 px-4 py-2 rounded-full">Automated Savings Plans</span>
-          <span className="bg-white/20 px-4 py-2 rounded-full">Achievement Badges</span>
-          <span className="bg-white/20 px-4 py-2 rounded-full">Social Goal Sharing</span>
-          <span className="bg-white/20 px-4 py-2 rounded-full">Goal Templates</span>
-        </div>
-      </div>
-
-      {/* Call to Action */}
-      <div className="text-center space-y-6">
-        <div className="space-y-4">
-          <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
-            Want to be notified when Goals launches?
-          </h3>
-          <p className="text-gray-600 dark:text-gray-300">
-            Join our waitlist and be the first to know when this feature becomes available!
-          </p>
-        </div>
-
-        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-          <Link
-            to="/dashboard"
-            className="btn-primary"
+      {/* Filter Tabs */}
+      <div className="flex space-x-1 bg-gray-100 dark:bg-gray-800 p-1 rounded-xl">
+        {['all', 'in-progress', 'completed'].map((tab) => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            className={`px-4 py-2 rounded-lg font-medium transition-all duration-300 ${
+              activeTab === tab
+                ? 'bg-white dark:bg-gray-700 text-blue-600 shadow-sm'
+                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+            }`}
           >
-            Back to Dashboard
-          </Link>
-          <button className="px-8 py-3 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl font-semibold hover:bg-gray-300 dark:hover:bg-gray-600 transition-all duration-300">
-            Join Waitlist (Soon)
+            {tab === 'all' ? 'All Goals' :
+             tab === 'in-progress' ? 'In Progress' :
+             'Completed'}
+          </button>
+        ))}
+      </div>
+
+      {/* Success/Error Messages */}
+      {successMessage && (
+        <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl p-4">
+          <div className="flex items-center gap-3">
+            <span className="text-green-600">✅</span>
+            <p className="text-green-800 dark:text-green-200 font-medium">{successMessage}</p>
+          </div>
+        </div>
+      )}
+
+      {error && (
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4">
+          <div className="flex items-center gap-3">
+            <span className="text-red-600">❌</span>
+            <p className="text-red-800 dark:text-red-200 font-medium">{error}</p>
+          </div>
+        </div>
+      )}
+
+      {/* Goals Grid */}
+      {filteredGoals.length === 0 ? (
+        <div className="text-center py-16">
+          <div className="w-24 h-24 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-6">
+            <span className="text-4xl">🎯</span>
+          </div>
+          <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+            No goals yet
+          </h3>
+          <p className="text-gray-600 dark:text-gray-400 mb-6">
+            Create your first saving goal to start tracking your progress
+          </p>
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
+          >
+            Create Your First Goal
           </button>
         </div>
-      </div>
+      ) : (
+        <div className="grid gap-6">
+          {filteredGoals.map((goal) => (
+            <div
+              key={goal._id}
+              className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-200 dark:border-gray-700 hover:shadow-xl transition-all duration-300"
+            >
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-gradient-to-r from-blue-400 to-purple-600 rounded-xl flex items-center justify-center">
+                    <span className="text-xl">{getCategoryIcon(goal.category)}</span>
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
+                      {goal.title}
+                    </h3>
+                    <p className="text-gray-600 dark:text-gray-400 text-sm">
+                      {goal.category.charAt(0).toUpperCase() + goal.category.slice(1)} • Due {format(new Date(goal.deadline), 'MMM dd, yyyy')}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                    goal.status === 'completed'
+                      ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
+                      : 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400'
+                  }`}>
+                    {goal.status === 'completed' ? 'Completed' : 'In Progress'}
+                  </span>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteClick(goal._id);
+                    }}
+                    className="text-red-500 hover:text-red-700 p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors transform hover:scale-110 transition-transform duration-200"
+                    title="Delete goal"
+                  >
+                    🗑️
+                  </button>
+                </div>
+              </div>
 
-      {/* Related Features */}
-      <div className="bg-gray-50 dark:bg-gray-800 rounded-2xl p-8">
-        <h3 className="text-2xl font-bold text-center text-gray-900 dark:text-white mb-6">
-          💡 Meanwhile, explore these features:
-        </h3>
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Link
-            to="/wallets"
-            className="bg-white dark:bg-gray-700 p-4 rounded-xl hover:shadow-lg transition-all duration-300 text-center group"
-          >
-            <div className="text-2xl mb-2">💳</div>
-            <div className="font-semibold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400">
-              Wallets
-            </div>
-            <div className="text-sm text-gray-600 dark:text-gray-300">
-              Manage multiple accounts
-            </div>
-          </Link>
+              {goal.description && (
+                <p className="text-gray-600 dark:text-gray-400 mb-4">
+                  {goal.description}
+                </p>
+              )}
 
-          <Link
-            to="/budgets"
-            className="bg-white dark:bg-gray-700 p-4 rounded-xl hover:shadow-lg transition-all duration-300 text-center group"
-          >
-            <div className="text-2xl mb-2">📈</div>
-            <div className="font-semibold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400">
-              Budgets
-            </div>
-            <div className="text-sm text-gray-600 dark:text-gray-300">
-              Plan your spending
-            </div>
-          </Link>
+              {/* Progress Bar */}
+              <div className="mb-4">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Progress
+                  </span>
+                  <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                    {typeof goal.progressPercentage === 'number' && !isNaN(goal.progressPercentage) 
+                      ? Math.round(goal.progressPercentage) 
+                      : 0}%
+                  </span>
+                </div>
+                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
+                  <div
+                    className={`h-3 rounded-full transition-all duration-500 ${getProgressColor(goal.progressPercentage || 0)}`}
+                    style={{ width: `${Math.min(goal.progressPercentage || 0, 100)}%` }}
+                  ></div>
+                </div>
+              </div>
 
-          <Link
-            to="/transactions"
-            className="bg-white dark:bg-gray-700 p-4 rounded-xl hover:shadow-lg transition-all duration-300 text-center group"
-          >
-            <div className="text-2xl mb-2">💸</div>
-            <div className="font-semibold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400">
-              Transactions
-            </div>
-            <div className="text-sm text-gray-600 dark:text-gray-300">
-              Track your money
-            </div>
-          </Link>
+              {/* Amount Details */}
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                <div>
+                  <p className="text-gray-600 dark:text-gray-400 text-sm">Target Amount</p>
+                  <p className="text-lg font-semibold text-gray-900 dark:text-white">
+                    {formatCurrency(goal.targetAmount)}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-gray-600 dark:text-gray-400 text-sm">Saved Amount</p>
+                  <p className="text-lg font-semibold text-green-600">
+                    {formatCurrency(goal.savedAmount)}
+                  </p>
+                </div>
+              </div>
 
-          <Link
-            to="/debts"
-            className="bg-white dark:bg-gray-700 p-4 rounded-xl hover:shadow-lg transition-all duration-300 text-center group"
-          >
-            <div className="text-2xl mb-2">💰</div>
-            <div className="font-semibold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400">
-              Debts
+              {/* Remaining Amount */}
+              <div className="flex justify-between items-center">
+                <div>
+                  <p className="text-gray-600 dark:text-gray-400 text-sm">Remaining</p>
+                  <p className="text-lg font-semibold text-orange-600">
+                    {formatCurrency(goal.remainingAmount)}
+                  </p>
+                </div>
+                {goal.status === 'in-progress' && (
+                  <button
+                    onClick={() => {
+                      setSelectedGoal(goal);
+                      setShowSavingsModal(true);
+                    }}
+                    className="bg-gradient-to-r from-green-600 to-green-700 text-white px-4 py-2 rounded-lg font-medium hover:shadow-lg transition-all duration-300 flex items-center gap-2"
+                  >
+                    <span>💰</span>
+                    Add Savings
+                  </button>
+                )}
+              </div>
             </div>
-            <div className="text-sm text-gray-600 dark:text-gray-300">
-              Manage your debts
-            </div>
-          </Link>
+          ))}
         </div>
-      </div>
+      )}
+
+      {/* Create Goal Modal */}
+      {showCreateModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 w-full max-w-md">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                Create New Goal
+              </h2>
+              <button
+                onClick={() => setShowCreateModal(false)}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateGoal} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Goal Title *
+                </label>
+                <input
+                  type="text"
+                  value={newGoal.title}
+                  onChange={(e) => setNewGoal({ ...newGoal, title: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  placeholder="e.g., Emergency Fund"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Description
+                </label>
+                <textarea
+                  value={newGoal.description}
+                  onChange={(e) => setNewGoal({ ...newGoal, description: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  placeholder="Describe your goal..."
+                  rows={3}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Target Amount *
+                </label>
+                <input
+                  type="number"
+                  value={newGoal.targetAmount}
+                  onChange={(e) => setNewGoal({ ...newGoal, targetAmount: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  placeholder="100000"
+                  min="1"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Target Date *
+                </label>
+                <input
+                  type="date"
+                  value={newGoal.deadline}
+                  onChange={(e) => setNewGoal({ ...newGoal, deadline: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  min={new Date().toISOString().split('T')[0]}
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Category
+                </label>
+                <select
+                  value={newGoal.category}
+                  onChange={(e) => setNewGoal({ ...newGoal, category: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                >
+                  <option value="emergency">Emergency Fund</option>
+                  <option value="vacation">Vacation</option>
+                  <option value="car">Car Purchase</option>
+                  <option value="house">House Down Payment</option>
+                  <option value="education">Education</option>
+                  <option value="investment">Investment</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowCreateModal(false)}
+                  className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded-lg font-medium hover:shadow-lg transition-all duration-300"
+                >
+                  Create Goal
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Add Savings Modal */}
+      {showSavingsModal && selectedGoal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 w-full max-w-md">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                Add Savings
+              </h2>
+              <button
+                onClick={() => {
+                  setShowSavingsModal(false);
+                  setSelectedGoal(null);
+                  setSavingsAmount('');
+                }}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="mb-6">
+              <h3 className="font-semibold text-gray-900 dark:text-white mb-2">
+                {selectedGoal.title}
+              </h3>
+              <p className="text-gray-600 dark:text-gray-400">
+                Current: {formatCurrency(selectedGoal.savedAmount)} / {formatCurrency(selectedGoal.targetAmount)}
+              </p>
+            </div>
+
+            <form onSubmit={handleAddSavings} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Amount to Add *
+                </label>
+                <input
+                  type="number"
+                  value={savingsAmount}
+                  onChange={(e) => setSavingsAmount(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  placeholder="5000"
+                  min="1"
+                  required
+                />
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowSavingsModal(false);
+                    setSelectedGoal(null);
+                    setSavingsAmount('');
+                  }}
+                  className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 bg-gradient-to-r from-green-600 to-green-700 text-white px-4 py-2 rounded-lg font-medium hover:shadow-lg transition-all duration-300"
+                >
+                  Add Savings
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 w-full max-w-md transform transition-all duration-300 scale-95 hover:scale-100">
+            <div className="text-center">
+              <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-red-100 dark:bg-red-900/30 mb-4">
+                <span className="text-2xl">❓</span>
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+                Delete Goal
+              </h3>
+              <p className="text-gray-600 dark:text-gray-300 mb-6">
+                Are you sure you want to delete this goal? This action cannot be undone.
+              </p>
+              <div className="flex gap-4 justify-center">
+                <button
+                  onClick={() => setShowDeleteModal(false)}
+                  className="px-6 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors transform hover:-translate-y-0.5 hover:shadow-lg"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDeleteGoal}
+                  className="px-6 py-2 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg hover:shadow-xl transition-all transform hover:-translate-y-0.5 hover:shadow-red-500/20 flex items-center gap-2"
+                >
+                  <span>🗑️</span> Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

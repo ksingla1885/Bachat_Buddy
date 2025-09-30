@@ -19,6 +19,9 @@ router.route('/:id')
 // Debt payment update
 router.patch('/:id/payment', debtController.updateDebtPayment);
 
+// Debt interest calculation
+router.patch('/:id/interest', debtController.updateDebtInterest);
+
 // Debt statistics
 router.get('/stats/overview', debtController.getDebtStats);
 

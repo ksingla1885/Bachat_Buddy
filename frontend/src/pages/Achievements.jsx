@@ -1,192 +1,210 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import * as api from '../services/api';
 
 function Achievements() {
+  const [achievements, setAchievements] = useState({});
+  const [userPoints, setUserPoints] = useState(0);
+  const [pointsHistory, setPointsHistory] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
+  const [activeTab, setActiveTab] = useState('achievements');
+
+  useEffect(() => {
+    fetchAchievements();
+    fetchUserPoints();
+    fetchPointsHistory();
+  }, []);
+
+  const fetchAchievements = async () => {
+    try {
+      setIsLoading(true);
+      const response = await api.getUserAchievements();
+      setAchievements(response.data.data);
+      setError('');
+    } catch (err) {
+      console.error('Fetch achievements error:', err.response?.data || err.message);
+      setError(err.response?.data?.message || 'Error fetching achievements');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const fetchUserPoints = async () => {
+    try {
+      const response = await api.getUserPoints();
+      setUserPoints(response.data.data.points);
+    } catch (err) {
+      console.error('Fetch user points error:', err.response?.data || err.message);
+    }
+  };
+
+  const fetchPointsHistory = async () => {
+    try {
+      const response = await api.getPointsHistory({ limit: 10 });
+      setPointsHistory(response.data.data);
+    } catch (err) {
+      console.error('Fetch points history error:', err.response?.data || err.message);
+    }
+  };
+
+  const earnedAchievements = Array.isArray(achievements) 
+    ? achievements.filter(achievement => achievement.earned) 
+    : [];
+    
+  const totalAchievements = Array.isArray(achievements) ? achievements.length : 0;
+  const completionPercentage = totalAchievements > 0 
+    ? Math.round((earnedAchievements.length / totalAchievements) * 100) 
+    : 0;
+
+  const getAchievementColor = (earned) => {
+    return earned
+      ? 'bg-gradient-to-r from-yellow-400 to-orange-500'
+      : 'bg-gradient-to-r from-gray-300 to-gray-400 dark:from-gray-600 dark:to-gray-700';
+  };
+
+  const getProgressColor = (progress) => {
+    if (progress >= 100) return 'bg-green-500';
+    if (progress >= 75) return 'bg-blue-500';
+    if (progress >= 50) return 'bg-yellow-500';
+    return 'bg-orange-500';
+  };
+
+  const getAchievementProgress = (achievement) => {
+    // Progress should come from the API response
+    return achievement?.progress || 0;
+  };
+
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString('en-IN', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    });
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-96">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-12">
-      {/* Hero Section */}
-      <div className="text-center space-y-6 py-12">
-        <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-r from-warning-500 to-warning-600 rounded-2xl shadow-lg">
-          <span className="text-3xl">🏆</span>
-        </div>
-
-        <div className="space-y-4 max-w-4xl mx-auto">
-          <h1 className="text-heading-1 text-gray-900 dark:text-white">
+    <div className="space-y-8">
+      {/* Header Section */}
+      <div className="text-center py-8 px-4">
+        <h1 className="text-4xl font-bold mb-2">
+          <span className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
             Achievements
-          </h1>
-          <p className="text-body-large max-w-3xl mx-auto">
-            Unlock badges, earn rewards, and celebrate your financial milestones with our gamified achievement system.
-          </p>
-          <div className="inline-flex items-center px-6 py-3 bg-primary-600 text-white rounded-full font-medium shadow-sm">
-            🚧 Coming Soon
-          </div>
-        </div>
-      </div>
-
-      {/* Achievement Categories */}
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {/* Savings Badges */}
-        <div className="card-professional hover-lift p-6">
-          <div className="w-12 h-12 bg-gradient-to-r from-success-500 to-success-600 rounded-xl flex items-center justify-center mb-4">
-            <span className="text-xl">💰</span>
-          </div>
-          <h3 className="text-heading-3 mb-3">
-            Savings Badges
-          </h3>
-          <p className="text-body">
-            Earn badges for consistent saving habits, reaching savings targets, and building your emergency fund.
-          </p>
-        </div>
-
-        {/* Transaction Milestones */}
-        <div className="card-professional hover-lift p-6">
-          <div className="w-12 h-12 bg-gradient-to-r from-primary-500 to-primary-600 rounded-xl flex items-center justify-center mb-4">
-            <span className="text-xl">📊</span>
-          </div>
-          <h3 className="text-heading-3 mb-3">
-            Transaction Milestones
-          </h3>
-          <p className="text-body">
-            Celebrate tracking achievements like logging your first transaction, maintaining daily entries, or categorizing expenses perfectly.
-          </p>
-        </div>
-
-        {/* Budget Mastery */}
-        <div className="card-professional hover-lift p-6">
-          <div className="w-12 h-12 bg-gradient-to-r from-warning-500 to-warning-600 rounded-xl flex items-center justify-center mb-4">
-            <span className="text-xl">🎯</span>
-          </div>
-          <h3 className="text-heading-3 mb-3">
-            Budget Mastery
-          </h3>
-          <p className="text-body">
-            Unlock achievements for staying under budget, creating multiple budgets, and maintaining financial discipline.
-          </p>
-        </div>
-
-        {/* Streak Rewards */}
-        <div className="card-professional hover-lift p-6">
-          <div className="w-12 h-12 bg-gradient-to-r from-warning-500 to-warning-600 rounded-xl flex items-center justify-center mb-4">
-            <span className="text-xl">🔥</span>
-          </div>
-          <h3 className="text-heading-3 mb-3">
-            Streak Rewards
-          </h3>
-          <p className="text-body">
-            Build momentum with daily login streaks, consecutive saving days, and consistent money management habits.
-          </p>
-        </div>
-
-        {/* Goal Achievements */}
-        <div className="card-professional hover-lift p-6">
-          <div className="w-12 h-12 bg-gradient-to-r from-success-500 to-success-600 rounded-xl flex items-center justify-center mb-4">
-            <span className="text-xl">🎉</span>
-          </div>
-          <h3 className="text-heading-3 mb-3">
-            Goal Achievements
-          </h3>
-          <p className="text-body">
-            Celebrate reaching financial goals, whether it's paying off debt, saving for a vacation, or hitting investment targets.
-          </p>
-        </div>
-
-        {/* Social Recognition */}
-        <div className="card-professional hover-lift p-6">
-          <div className="w-12 h-12 bg-gradient-to-r from-primary-500 to-primary-600 rounded-xl flex items-center justify-center mb-4">
-            <span className="text-xl">👥</span>
-          </div>
-          <h3 className="text-heading-3 mb-3">
-            Social Recognition
-          </h3>
-          <p className="text-body">
-            Share achievements with friends, compete on leaderboards, and motivate each other to reach financial success.
-          </p>
-        </div>
-      </div>
-
-      {/* Achievement Levels Preview */}
-      <div className="bg-gradient-to-r from-neutral-800 to-neutral-900 rounded-2xl p-8 text-white shadow-xl">
-        <h2 className="text-heading-2 mb-4 text-center">🏅 Achievement Levels</h2>
-        <p className="text-body-large opacity-90 mb-6 text-center">
-          Progress through different levels as you unlock more achievements and build better financial habits.
+          </span>
+        </h1>
+        <p className="text-gray-600 dark:text-gray-400 text-lg">
+          Unlock badges, earn rewards, and celebrate your financial milestones
         </p>
-        <div className="grid md:grid-cols-5 gap-4">
-          <div className="text-center">
-            <div className="w-16 h-16 bg-gradient-to-r from-neutral-400 to-neutral-500 rounded-full flex items-center justify-center mx-auto mb-2">
-              <span className="text-2xl">🥉</span>
-            </div>
-            <div className="font-semibold">Bronze</div>
-            <div className="text-caption opacity-75">Beginner</div>
-          </div>
-          <div className="text-center">
-            <div className="w-16 h-16 bg-gradient-to-r from-neutral-300 to-neutral-400 rounded-full flex items-center justify-center mx-auto mb-2">
-              <span className="text-2xl">🥈</span>
-            </div>
-            <div className="font-semibold">Silver</div>
-            <div className="text-caption opacity-75">Intermediate</div>
-          </div>
-          <div className="text-center">
-            <div className="w-16 h-16 bg-gradient-to-r from-warning-400 to-warning-600 rounded-full flex items-center justify-center mx-auto mb-2">
-              <span className="text-2xl">🥇</span>
-            </div>
-            <div className="font-semibold">Gold</div>
-            <div className="text-caption opacity-75">Advanced</div>
-          </div>
-          <div className="text-center">
-            <div className="w-16 h-16 bg-gradient-to-r from-primary-500 to-primary-600 rounded-full flex items-center justify-center mx-auto mb-2">
-              <span className="text-2xl">💎</span>
-            </div>
-            <div className="font-semibold">Diamond</div>
-            <div className="text-caption opacity-75">Expert</div>
-          </div>
-          <div className="text-center">
-            <div className="w-16 h-16 bg-gradient-to-r from-warning-400 to-warning-500 rounded-full flex items-center justify-center mx-auto mb-2">
-              <span className="text-2xl">👑</span>
-            </div>
-            <div className="font-semibold">Legend</div>
-            <div className="text-caption opacity-75">Master</div>
-          </div>
-        </div>
       </div>
 
-      {/* Coming Soon Message */}
-      <div className="bg-gradient-to-r from-primary-600 to-primary-700 rounded-2xl p-8 text-center text-white shadow-xl">
-        <h2 className="text-heading-2 mb-4">🎮 Gamification Features Coming Soon!</h2>
-        <p className="text-body-large opacity-90 mb-6">
-          We're developing an exciting achievement system that will make managing your finances fun and rewarding.
-        </p>
-        <div className="flex flex-wrap justify-center gap-3 text-sm">
-          <span className="bg-white/20 px-4 py-2 rounded-full">Achievement Badges</span>
-          <span className="bg-white/20 px-4 py-2 rounded-full">Progress Tracking</span>
-          <span className="bg-white/20 px-4 py-2 rounded-full">Leaderboards</span>
-          <span className="bg-white/20 px-4 py-2 rounded-full">Daily Challenges</span>
-          <span className="bg-white/20 px-4 py-2 rounded-full">Reward System</span>
-          <span className="bg-white/20 px-4 py-2 rounded-full">Streak Bonuses</span>
-        </div>
-      </div>
+      {/* Stats Overview - Enhanced Design */}
+      {Array.isArray(achievements) && achievements.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          {/* Total Points Card */}
+          <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-white to-gray-50 dark:from-gray-800/95 dark:to-gray-900 p-0.5 shadow-sm hover:shadow-lg transition-all duration-500 hover:-translate-y-1">
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-50/50 to-transparent dark:from-blue-900/20 dark:to-transparent rounded-2xl transition-opacity group-hover:opacity-100 opacity-0"></div>
+            <div className="relative bg-white/90 dark:bg-gray-800/70 backdrop-blur-sm rounded-[15px] p-5 h-full border border-gray-100/50 dark:border-gray-700/30">
+              <div className="flex justify-between items-start">
+                <div>
+                  <p className="text-sm font-medium text-gray-500 dark:text-gray-300 mb-1">Total Points</p>
+                  <p className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-blue-400 dark:from-blue-400 dark:to-blue-300 bg-clip-text text-transparent">
+                    {userPoints}
+                  </p>
+                </div>
+                <div className="p-2.5 rounded-xl bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/30 shadow-inner">
+                  <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 dark:from-blue-400 dark:to-blue-500 flex items-center justify-center shadow-sm">
+                    <span className="text-xl">💎</span>
+                  </div>
+                </div>
+              </div>
+              <div className="mt-4 h-1.5 w-full bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-gradient-to-r from-blue-400 to-blue-600 dark:from-blue-500 dark:to-blue-400 rounded-full transition-all duration-1000 ease-out"
+                  style={{ width: `${Math.min(100, (userPoints / 1000) * 100)}%` }}
+                ></div>
+              </div>
+            </div>
+          </div>
 
-      {/* Call to Action */}
-      <div className="text-center space-y-6">
-        <div className="space-y-4 max-w-2xl mx-auto">
-          <h3 className="text-heading-2 text-gray-900 dark:text-white">
-            Want to be notified when Achievements launches?
-          </h3>
-          <p className="text-body">
-            Join our waitlist and be the first to unlock badges and earn rewards!
-          </p>
-        </div>
+          {/* Achievements Earned Card */}
+          <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-white to-gray-50 dark:from-gray-800/95 dark:to-gray-900 p-0.5 shadow-sm hover:shadow-lg transition-all duration-500 hover:-translate-y-1">
+            <div className="absolute inset-0 bg-gradient-to-br from-green-50/50 to-transparent dark:from-green-900/20 dark:to-transparent rounded-2xl transition-opacity group-hover:opacity-100 opacity-0"></div>
+            <div className="relative bg-white/90 dark:bg-gray-800/70 backdrop-blur-sm rounded-[15px] p-5 h-full border border-gray-100/50 dark:border-gray-700/30">
+              <div className="flex justify-between items-start">
+                <div>
+                  <p className="text-sm font-medium text-gray-500 dark:text-gray-300 mb-1">Achievements</p>
+                  <p className="text-3xl font-bold bg-gradient-to-r from-green-600 to-green-400 dark:from-green-400 dark:to-green-300 bg-clip-text text-transparent">
+                    {earnedAchievements.length}
+                    <span className="text-base font-normal text-gray-400 dark:text-gray-500 ml-1">/ {totalAchievements}</span>
+                  </p>
+                </div>
+                <div className="p-2.5 rounded-xl bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/30 dark:to-green-800/30 shadow-inner">
+                  <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-green-500 to-green-600 dark:from-green-400 dark:to-green-500 flex items-center justify-center shadow-sm">
+                    <span className="text-xl">🏆</span>
+                  </div>
+                </div>
+              </div>
+              <div className="mt-4 h-1.5 w-full bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-gradient-to-r from-green-400 to-green-600 dark:from-green-500 dark:to-green-400 rounded-full transition-all duration-1000 ease-out"
+                  style={{ width: `${completionPercentage}%` }}
+                ></div>
+              </div>
+            </div>
+          </div>
 
-        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-          <Link
-            to="/dashboard"
-            className="btn-primary"
+          {/* Completion Rate Card */}
+          <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-white to-gray-50 dark:from-gray-800/95 dark:to-gray-900 p-0.5 shadow-sm hover:shadow-lg transition-all duration-500 hover:-translate-y-1">
+            <div className="absolute inset-0 bg-gradient-to-br from-purple-50/50 to-transparent dark:from-purple-900/20 dark:to-transparent rounded-2xl transition-opacity group-hover:opacity-100 opacity-0"></div>
+            <div className="relative bg-white/90 dark:bg-gray-800/70 backdrop-blur-sm rounded-[15px] p-5 h-full border border-gray-100/50 dark:border-gray-700/30">
+              <div className="flex justify-between items-start">
+                <div>
+                  <p className="text-sm font-medium text-gray-500 dark:text-gray-300 mb-1">Completion</p>
+                  <p className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-purple-400 dark:from-purple-400 dark:to-purple-300 bg-clip-text text-transparent">
+                    {completionPercentage}%
+                  </p>
+                </div>
+                <div className="p-2.5 rounded-xl bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/30 dark:to-purple-800/30 shadow-inner">
+                  <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-500 to-purple-600 dark:from-purple-400 dark:to-purple-500 flex items-center justify-center shadow-sm">
+                    <span className="text-xl">📈</span>
+                  </div>
+                </div>
+              </div>
+              <div className="mt-4 h-1.5 w-full bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-gradient-to-r from-purple-400 to-purple-600 dark:from-purple-500 dark:to-purple-400 rounded-full transition-all duration-1000 ease-out"
+                  style={{ width: `${completionPercentage}%` }}
+                ></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Tab Navigation */}
+      <div className="flex space-x-1 bg-gray-100 dark:bg-gray-800 p-1 rounded-xl">
+        {['achievements', 'points'].map((tab) => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            className={`px-4 py-2 rounded-lg font-medium transition-all duration-300 ${
+              activeTab === tab
+                ? 'bg-white dark:bg-gray-700 text-blue-600 shadow-sm'
+                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+            }`}
           >
-            Back to Dashboard
-          </Link>
-          <button className="btn-secondary">
-            Join Waitlist (Soon)
+            {tab === 'achievements' ? 'Achievements' : 'Points History'}
           </button>
-        </div>
+        ))}
       </div>
 
       {/* Related Features */}

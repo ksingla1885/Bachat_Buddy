@@ -17,6 +17,7 @@ const pointsLogSchema = new mongoose.Schema({
     enum: [
       'budget_under_limit',
       'goal_completed',
+      'goal_savings',
       'recurring_saving_streak',
       'debt_paid_off',
       'first_transaction',

@@ -314,9 +314,11 @@ function Dashboard() {
   return (
     <div className="space-y-8 animate-fadeInUp">
       {/* Welcome Header */}
-      <div className="text-center py-8">
-        <h1 className="text-4xl font-bold text-gradient mb-2">
-          Welcome back, {user?.name}!
+      <div className="text-center py-8 px-4">
+        <h1 className="text-4xl font-bold mb-2">
+          <span className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+            Welcome back, {user?.name}!
+          </span>
         </h1>
         <p className="text-gray-600 dark:text-gray-400 text-lg">
           Here's your financial overview for today

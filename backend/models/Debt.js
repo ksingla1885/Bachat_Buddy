@@ -46,7 +46,17 @@ const debtSchema = new mongoose.Schema({
     default: function() {
       return this.amount;
     }
-  }
+  },
+  interestHistory: [{
+    amount: {
+      type: Number,
+      required: true
+    },
+    calculatedAt: {
+      type: Date,
+      default: Date.now
+    }
+  }]
 }, {
   timestamps: true
 });
@@ -59,6 +69,14 @@ debtSchema.index({ dueDate: 1 });
 debtSchema.virtual('isOverdue').get(function() {
   return this.dueDate < new Date() && this.status === 'active';
 });
+
+// Method to calculate total interest paid
+debtSchema.methods.getTotalInterest = function() {
+  if (!this.interestHistory || this.interestHistory.length === 0) {
+    return 0;
+  }
+  return this.interestHistory.reduce((total, interest) => total + interest.amount, 0);
+};
 
 // Method to update remaining amount
 debtSchema.methods.updateRemainingAmount = function(paymentAmount) {

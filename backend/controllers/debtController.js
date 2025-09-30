@@ -171,7 +171,7 @@ exports.updateDebt = async (req, res) => {
 // ================================
 exports.deleteDebt = async (req, res) => {
   try {
-    const debt = await Debt.findOneAndDelete({
+    const debt = await Debt.findOne({
       _id: req.params.id,
       userId: req.user.id
     });
@@ -182,6 +182,16 @@ exports.deleteDebt = async (req, res) => {
         message: 'Debt not found'
       });
     }
+
+    // Only allow deletion of closed debts
+    if (debt.status !== 'closed') {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Only closed debts can be deleted. Please pay off this debt first.'
+      });
+    }
+
+    await Debt.findByIdAndDelete(req.params.id);
 
     // Clear user cache
     clearUserCache(req.user.id);
@@ -269,6 +279,69 @@ exports.updateDebtPayment = async (req, res) => {
     res.status(500).json({
       status: 'error',
       message: error.message || 'Failed to update debt payment'
+    });
+  }
+};
+
+// ================================
+// Update Debt Interest
+// ================================
+exports.updateDebtInterest = async (req, res) => {
+  try {
+    const { monthlyInterest, newRemainingAmount } = req.body;
+
+    if (!monthlyInterest || monthlyInterest < 0) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Monthly interest must be a positive number'
+      });
+    }
+
+    const debt = await Debt.findOne({
+      _id: req.params.id,
+      userId: req.user.id
+    });
+
+    if (!debt) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'Debt not found'
+      });
+    }
+
+    if (debt.status === 'closed') {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Cannot add interest to a closed debt'
+      });
+    }
+
+    // Update the remaining amount with the new calculated amount
+    debt.remainingAmount = Number(newRemainingAmount);
+
+    // Add interest record to history if the model supports it
+    if (debt.interestHistory) {
+      debt.interestHistory.push({
+        amount: Number(monthlyInterest),
+        calculatedAt: new Date()
+      });
+    }
+
+    await debt.save();
+
+    // Clear user cache
+    clearUserCache(req.user.id);
+
+    res.json({
+      status: 'success',
+      message: `Interest calculated: ₹${monthlyInterest} added to debt`,
+      data: debt
+    });
+  } catch (error) {
+    console.error('Update debt interest error:', error);
+    res.status(500).json({
+      status: 'error',
+      message: error.message || 'Failed to update debt interest'
     });
   }
 };

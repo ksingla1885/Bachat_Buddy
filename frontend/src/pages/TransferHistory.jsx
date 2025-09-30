@@ -32,19 +32,36 @@ const TransferHistory = () => {
     const getWalletName = (id) => wallets.find(w => w._id === id)?.name || id;
 
     return (
-        <div className="container mx-auto px-4 py-8">
-            <h1 className="text-2xl font-bold mb-6 text-gray-900 dark:text-white">Transfer History</h1>
+        <div className="space-y-8">
+            {/* Header Section */}
+            <div className="text-center py-8 px-4">
+                <h1 className="text-4xl font-bold mb-2">
+                    <span className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+                        Transfer History
+                    </span>
+                </h1>
+                <p className="text-gray-600 dark:text-gray-400 text-lg">
+                    Track and manage all your wallet transfers
+                </p>
+            </div>
+
             {error && (
-                <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
-                    {error}
+                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 animate-fadeIn">
+                    <div className="flex items-center">
+                        <svg className="w-5 h-5 text-red-500 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <p className="text-sm font-medium text-red-800 dark:text-red-200">{error}</p>
+                    </div>
                 </div>
             )}
+
             {isLoading ? (
-                <div className="flex items-center justify-center h-40">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+                <div className="flex justify-center items-center min-h-96">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
                 </div>
             ) : (
-                <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-x-auto">
+                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-soft overflow-x-auto">
                     <table className="min-w-full text-sm">
                         <thead>
                             <tr className="bg-gray-50 dark:bg-gray-700 text-left text-gray-500 uppercase text-xs">

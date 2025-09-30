@@ -23,13 +23,10 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
-      // Token expired or invalid → logout
-      localStorage.removeItem("token");
-      window.location.href = "/login";
-    } else if (error.response?.status >= 500) {
+    if (error.response?.status >= 500) {
       console.error("Server error:", error.response.data);
     }
+    // Don't auto-redirect on 401 - let components handle auth errors
     return Promise.reject(error);
   }
 );
@@ -60,7 +57,7 @@ export const createTransaction = (data) =>
   api.post("/transactions", data);
 
 export const updateTransaction = (id, data) =>
-  api.put(`/transactions/${id}`, data);
+  api.patch(`/transactions/${id}`, data);
 
 export const deleteTransaction = (id) =>
   api.delete(`/transactions/${id}`);
@@ -78,7 +75,7 @@ export const createBudget = (data) =>
   api.post("/budgets", data);
 
 export const updateBudget = (id, data) =>
-  api.put(`/budgets/${id}`, data); // ✅ added update
+  api.patch(`/budgets/${id}`, data); // ✅ changed to PATCH
 
 export const deleteBudget = (id) =>
   api.delete(`/budgets/${id}`);
@@ -96,13 +93,16 @@ export const createDebt = (data) =>
   api.post("/debts", data);
 
 export const updateDebt = (id, data) =>
-  api.put(`/debts/${id}`, data);
+  api.patch(`/debts/${id}`, data);
 
 export const deleteDebt = (id) =>
   api.delete(`/debts/${id}`);
 
 export const updateDebtPayment = (id, data) =>
   api.patch(`/debts/${id}/payment`, data);
+
+export const updateDebtInterest = (id, data) =>
+  api.patch(`/debts/${id}/interest`, data);
 
 //
 // ----------------- Goal API -----------------
@@ -117,7 +117,7 @@ export const createGoal = (data) =>
   api.post("/goals", data);
 
 export const updateGoal = (id, data) =>
-  api.put(`/goals/${id}`, data);
+  api.patch(`/goals/${id}`, data);
 
 export const deleteGoal = (id) =>
   api.delete(`/goals/${id}`);
