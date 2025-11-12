@@ -16,6 +16,7 @@ const debtRoutes = require('./routes/debtRoutes');
 const goalRoutes = require('./routes/goalRoutes');
 const reportRoutes = require('./routes/reportRoutes');
 const userRoutes = require('./routes/userRoutes');
+const monthlySavingsTierRoutes = require('./routes/monthlySavingsTierRoutes');
 
 // Create Express app
 const app = express();
@@ -38,6 +39,7 @@ app.use('/api/debts', debtRoutes);
 app.use('/api/goals', goalRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/monthly-tiers', monthlySavingsTierRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

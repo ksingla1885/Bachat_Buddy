@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const { JWT_SECRET } = require('../config/jwt');
 
 const auth = async (req, res, next) => {
   try {
@@ -17,7 +18,7 @@ const auth = async (req, res, next) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     
     // Get user from database
-    const user = await User.findById(decoded.userId).select('-passwordHash');
+    const user = await User.findById(decoded.id).select('-passwordHash');
     
     if (!user) {
       return res.status(401).json({

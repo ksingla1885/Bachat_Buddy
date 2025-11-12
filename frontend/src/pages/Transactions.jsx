@@ -1,6 +1,23 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import * as api from '../services/api';
 import TransactionForm from '../components/TransactionForm';
+import {
+  TrendingUp,
+  TrendingDown,
+  CreditCard,
+  Search,
+  Plus,
+  Edit3,
+  ClipboardList,
+  Calendar,
+  Tag,
+  Wallet,
+  Trash2,
+  AlertCircle,
+  CheckCircle2,
+  ChevronLeft,
+  ChevronRight
+} from 'lucide-react';
 
 const Transactions = () => {
   const [transactions, setTransactions] = useState([]);
@@ -269,9 +286,7 @@ const Transactions = () => {
         <td className="px-6 py-4 whitespace-nowrap">
           <div className="flex items-center">
             <div className="w-10 h-10 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center mr-3">
-              <svg className="w-5 h-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
+              <Calendar className="w-5 h-5 text-gray-500" />
             </div>
             <div>
               <div className="text-sm font-medium text-gray-900 dark:text-white">
@@ -294,7 +309,7 @@ const Transactions = () => {
               ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
               : 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
           }`}>
-            {transaction.type === 'Income' ? '📈' : '📉'} {transaction.type}
+            {transaction.type === 'Income' ? <TrendingUp className="w-4 h-4 mr-1" /> : <TrendingDown className="w-4 h-4 mr-1" />} {transaction.type}
           </span>
         </td>
 
@@ -313,7 +328,7 @@ const Transactions = () => {
         <td className="px-6 py-4 whitespace-nowrap">
           <div className="flex items-center">
             <div className="w-8 h-8 bg-gradient-to-r from-blue-400 to-purple-500 rounded-lg flex items-center justify-center mr-2">
-              <span className="text-white text-xs font-bold">💳</span>
+              <CreditCard className="w-4 h-4 text-white" />
             </div>
             <span className="text-sm font-medium text-gray-900 dark:text-white">{walletName}</span>
           </div>
@@ -340,18 +355,14 @@ const Transactions = () => {
               onClick={() => handleEditTransaction(transaction)}
               className="inline-flex items-center px-3 py-1 text-xs font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/40 rounded-lg transition-colors duration-200 group"
             >
-              <svg className="w-4 h-4 mr-1 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-              </svg>
+              <Edit3 className="w-4 h-4 mr-1 group-hover:scale-110 transition-transform" />
               <span className="group-hover:scale-105 transition-transform">Edit</span>
             </button>
             <button
               onClick={() => handleDeleteTransaction(transaction)}
               className="inline-flex items-center px-3 py-1 text-xs font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/40 rounded-lg transition-colors duration-200 group"
             >
-              <svg className="w-4 h-4 mr-1 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-              </svg>
+              <Trash2 className="w-4 h-4 mr-1 group-hover:scale-110 transition-transform" />
               <span className="group-hover:scale-105 transition-transform">Delete</span>
             </button>
           </div>
@@ -405,9 +416,7 @@ const Transactions = () => {
               </p>
             </div>
             <div className="w-12 h-12 bg-green-500 rounded-xl flex items-center justify-center">
-              <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 11l5-5m0 0l5 5m-5-5v12" />
-              </svg>
+              <TrendingUp className="w-6 h-6 text-white" />
             </div>
           </div>
         </div>
@@ -422,9 +431,7 @@ const Transactions = () => {
               </p>
             </div>
             <div className="w-12 h-12 bg-red-500 rounded-xl flex items-center justify-center">
-              <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 13l-5 5m0 0l-5-5m5 5V6" />
-              </svg>
+              <TrendingDown className="w-6 h-6 text-white" />
             </div>
           </div>
         </div>
@@ -439,9 +446,7 @@ const Transactions = () => {
               </p>
             </div>
             <div className={`w-12 h-12 ${netFlow >= 0 ? 'bg-blue-500' : 'bg-orange-500'} rounded-xl flex items-center justify-center`}>
-              <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={netFlow >= 0 ? "M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" : "M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"} />
-              </svg>
+              {netFlow >= 0 ? <TrendingUp className="w-6 h-6 text-white" /> : <TrendingDown className="w-6 h-6 text-white" />}
             </div>
           </div>
         </div>
@@ -453,9 +458,7 @@ const Transactions = () => {
           onClick={() => setIsCreating(true)}
           className="btn-primary flex items-center space-x-2"
         >
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-          </svg>
+          <Plus className="w-5 h-5" />
           <span>Add Transaction</span>
         </button>
       </div>
@@ -464,9 +467,7 @@ const Transactions = () => {
       {error && (
         <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 mb-6 animate-fadeIn">
           <div className="flex items-center">
-            <svg className="w-5 h-5 text-red-500 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-            </svg>
+            <AlertCircle className="w-5 h-5 text-red-500 mr-3" />
             <p className="text-sm font-medium text-red-800 dark:text-red-200">{error}</p>
           </div>
         </div>
@@ -475,9 +476,7 @@ const Transactions = () => {
       {infoMessage && (
         <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl p-4 mb-6 animate-fadeIn">
           <div className="flex items-center">
-            <svg className="w-5 h-5 text-green-500 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-            </svg>
+            <CheckCircle2 className="w-5 h-5 text-green-500 mr-3" />
             <p className="text-sm font-medium text-green-800 dark:text-green-200">{infoMessage}</p>
           </div>
         </div>
@@ -492,9 +491,7 @@ const Transactions = () => {
               <div className="mx-auto w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mb-4">
                 <div className="relative">
                   <div className="w-10 h-10 bg-red-500 rounded-full flex items-center justify-center text-white">
-                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
+                    <Trash2 className="w-6 h-6" />
                   </div>
                   {/* Pulse effect */}
                   <div className="absolute inset-0 rounded-full bg-red-400 opacity-0 group-hover:opacity-40 transition-opacity duration-300 animate-ping"></div>
@@ -576,7 +573,7 @@ const Transactions = () => {
               </svg>
             </div>
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-              ➕ Add New Transaction
+              Add New Transaction
             </h2>
             <p className="text-gray-600 dark:text-gray-400">
               Record your income or expense
@@ -613,7 +610,7 @@ const Transactions = () => {
               </svg>
             </div>
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-              ✏️ Edit Transaction
+              Edit Transaction
             </h2>
             <p className="text-gray-600 dark:text-gray-400">
               Update your transaction details
@@ -649,13 +646,13 @@ const Transactions = () => {
           <svg className="w-5 h-5 text-gray-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.207A1 1 0 013 6.5V4z" />
           </svg>
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">🔍 Filter Transactions</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Filter Transactions</h3>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           {/* Wallet Filter */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              💳 Wallet
+              Wallet
             </label>
             <select
               value={filters.walletId}
@@ -674,7 +671,7 @@ const Transactions = () => {
           {/* Type Filter */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              🏷️ Type
+              Type
             </label>
             <select
               value={filters.type}
@@ -682,15 +679,15 @@ const Transactions = () => {
               className="input-modern"
             >
               <option value="">All Types</option>
-              <option value="Income">📈 Income</option>
-              <option value="Expense">📉 Expense</option>
+              <option value="Income">Income</option>
+              <option value="Expense">Expense</option>
             </select>
           </div>
 
           {/* Start Date */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              📅 Start Date
+              Start Date
             </label>
             <input
               type="date"
@@ -703,7 +700,7 @@ const Transactions = () => {
           {/* End Date */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              📅 End Date
+              End Date
             </label>
             <input
               type="date"
@@ -719,7 +716,6 @@ const Transactions = () => {
       <div className="card-modern overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
-            <span className="mr-2">📋</span>
             Recent Transactions
           </h3>
         </div>
@@ -746,25 +742,25 @@ const Transactions = () => {
               <thead className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-800">
                 <tr>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
-                    📅 Date
+                    Date
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
-                    🏷️ Type
+                    Type
                   </th>
                   <th className="px-6 py-4 text-right text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
-                    💰 Amount
+                    Amount
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
-                    💳 Wallet
+                    Wallet
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
-                    📂 Category
+                    Category
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
-                    📝 Notes
+                    Notes
                   </th>
                   <th className="px-6 py-4 text-right text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
-                    ⚡ Actions
+                    Actions
                   </th>
                 </tr>
               </thead>
@@ -784,9 +780,7 @@ const Transactions = () => {
             disabled={currentPage === 1}
             className="btn-secondary flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
+            <ChevronLeft className="w-4 h-4" />
             <span>Previous</span>
           </button>
           
@@ -812,9 +806,7 @@ const Transactions = () => {
             className="btn-secondary flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <span>Next</span>
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
+            <ChevronRight className="w-4 h-4" />
           </button>
         </div>
       )}

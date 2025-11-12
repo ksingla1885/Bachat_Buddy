@@ -15,6 +15,7 @@ import DebtTracker from './pages/DebtTracker';
 import Goals from './pages/Goals';
 import Achievements from './pages/Achievements';
 import Reports from './pages/Reports';
+import Profile from './pages/Profile';
 
 // Protected Route Component
 function ProtectedRoute({ children }) {
@@ -155,6 +156,16 @@ function App() {
                 <ProtectedRoute>
                   <AppLayout showNavbar={true} showContainer={true}>
                     <Achievements />
+                  </AppLayout>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/profile" 
+              element={
+                <ProtectedRoute>
+                  <AppLayout showNavbar={true} showContainer={true}>
+                    <Profile />
                   </AppLayout>
                 </ProtectedRoute>
               } 

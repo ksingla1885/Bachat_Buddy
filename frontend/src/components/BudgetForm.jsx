@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useForm, useWatch } from "react-hook-form";
+import { expenseCategories } from "../config/categories";
 
 function BudgetForm({ onSubmit, initialData = null }) {
   const [isLoading, setIsLoading] = useState(false);
@@ -11,17 +12,8 @@ function BudgetForm({ onSubmit, initialData = null }) {
     },
   });
 
-  const categories = [
-    { name: "Groceries", icon: "🛒" },
-    { name: "Transportation", icon: "🚗" },
-    { name: "Dining", icon: "🍽️" },
-    { name: "Shopping", icon: "🛍️" },
-    { name: "Entertainment", icon: "🎬" },
-    { name: "Bills", icon: "📝" },
-    { name: "Health", icon: "🏥" },
-    { name: "Education", icon: "📚" },
-    { name: "Others", icon: "📊" }
-  ];
+  // Use only expense categories for budgets
+  const categories = expenseCategories;
 
   const watchAlertThreshold = useWatch({
     control,

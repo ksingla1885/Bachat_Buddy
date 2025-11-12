@@ -1,27 +1,27 @@
 // Navigation configuration
 export const navigationItems = [
-  { path: '/dashboard', name: 'Dashboard', icon: '📊' },
+  { path: '/dashboard', name: 'Dashboard', icon: 'LayoutDashboard' },
   {
     name: 'Transactions',
-    icon: '💸',
+    icon: 'CreditCard',
     type: 'dropdown',
     children: [
-      { path: '/wallets', name: 'Wallets', icon: '💳' },
-      { path: '/transactions', name: 'Transactions', icon: '💸' },
-      { path: '/budgets', name: 'Budgets', icon: '📈' }
+      { path: '/wallets', name: 'Wallets', icon: 'Wallet' },
+      { path: '/transactions', name: 'Transactions', icon: 'ArrowLeftRight' },
+      { path: '/budgets', name: 'Budgets', icon: 'TrendingUp' }
     ]
   },
-  { path: '/debts', name: 'Debts', icon: '💰' },
-  { path: '/reports', name: 'Reports', icon: '📊' },
+  { path: '/debts', name: 'Debts', icon: 'Calculator' },
+  { path: '/reports', name: 'Reports', icon: 'BarChart3' },
   {
     name: 'Achievements',
-    icon: '🏆',
+    icon: 'Trophy',
     type: 'dropdown',
     children: [
-      { path: '/goals', name: 'Goals', icon: '🎯' },
-      { path: '/achievements', name: 'Points', icon: '🏆' }
+      { path: '/goals', name: 'Goals', icon: 'Target' },
+      { path: '/achievements', name: 'Points', icon: 'Medal' }
     ]
-  },
+  }
 ];
 
 export default navigationItems;

@@ -1,6 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import * as api from '../services/api';
 import { format } from 'date-fns';
+import {
+  Target,
+  CheckCircle,
+  DollarSign,
+  TrendingUp,
+  AlertTriangle,
+  Trash2,
+  X,
+  Plus,
+  Plane,
+  Car,
+  Home,
+  GraduationCap
+} from 'lucide-react';
 
 function Goals() {
   const [goals, setGoals] = useState([]);
@@ -26,6 +40,13 @@ function Goals() {
   useEffect(() => {
     fetchGoals();
     fetchGoalStats();
+    
+    // Set up polling to refresh stats every 30 seconds
+    const intervalId = setInterval(() => {
+      fetchGoalStats();
+    }, 30000);
+    
+    return () => clearInterval(intervalId);
   }, []);
 
   const calculateGoalProgress = (goal) => {
@@ -65,9 +86,29 @@ function Goals() {
   const fetchGoalStats = async () => {
     try {
       const response = await api.getGoalStats();
-      setStats(response.data.data);
+      const statsData = response.data.data;
+      
+      // Calculate success rate based on completed vs total goals
+      const successRate = statsData.totalGoals > 0 
+        ? Math.round((statsData.completedGoals / statsData.totalGoals) * 100) 
+        : 0;
+      
+      setStats({
+        ...statsData,
+        successRate
+      });
     } catch (err) {
       console.error('Fetch goal stats error:', err.response?.data || err.message);
+      // Set default values to prevent UI errors
+      setStats({
+        totalGoals: 0,
+        completedGoals: 0,
+        inProgressGoals: 0,
+        totalTargetAmount: 0,
+        totalSavedAmount: 0,
+        successRate: 0,
+        overdueGoals: 0
+      });
     }
   };
 
@@ -92,6 +133,11 @@ function Goals() {
       setError(err.response?.data?.message || 'Error creating goal');
     }
   };
+
+  // Add fetchGoalStats to the dependency array of this effect
+  useEffect(() => {
+    fetchGoalStats();
+  }, [goals]);
 
   const handleAddSavings = async (e) => {
     e.preventDefault();
@@ -184,15 +230,16 @@ function Goals() {
 
   const getCategoryIcon = (category) => {
     const icons = {
-      emergency: '🚨',
-      vacation: '🏖️',
-      car: '🚗',
-      house: '🏠',
-      education: '📚',
-      investment: '📈',
-      other: '🎯'
+      emergency: AlertTriangle,
+      vacation: Plane,
+      car: Car,
+      house: Home,
+      education: GraduationCap,
+      investment: TrendingUp,
+      other: Target
     };
-    return icons[category] || icons.other;
+    const IconComponent = icons[category] || icons.other;
+    return <IconComponent className="w-6 h-6 text-white" />;
   };
 
   if (isLoading) {
@@ -221,7 +268,7 @@ function Goals() {
           onClick={() => setShowCreateModal(true)}
           className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2"
         >
-          <span>🎯</span>
+          <Target className="w-5 h-5" />
           Create New Goal
         </button>
       </div>
@@ -235,7 +282,7 @@ function Goals() {
               <p className="text-3xl font-bold text-gray-900 dark:text-white">{stats.totalGoals || 0}</p>
             </div>
             <div className="w-12 h-12 bg-gradient-to-r from-blue-400 to-blue-600 rounded-xl flex items-center justify-center">
-              <span className="text-xl">🎯</span>
+              <Target className="w-6 h-6 text-white" />
             </div>
           </div>
         </div>
@@ -247,7 +294,7 @@ function Goals() {
               <p className="text-3xl font-bold text-green-600">{stats.completedGoals || 0}</p>
             </div>
             <div className="w-12 h-12 bg-gradient-to-r from-green-400 to-green-600 rounded-xl flex items-center justify-center">
-              <span className="text-xl">✅</span>
+              <CheckCircle className="w-6 h-6 text-white" />
             </div>
           </div>
         </div>
@@ -256,10 +303,12 @@ function Goals() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-600 dark:text-gray-400 text-sm">Total Saved</p>
-              <p className="text-3xl font-bold text-blue-600">{formatCurrency(stats.totalSaved || 0)}</p>
+              <p className="text-3xl font-bold text-blue-600">
+                {stats.totalSavedAmount ? formatCurrency(stats.totalSavedAmount) : '₹0'}
+              </p>
             </div>
             <div className="w-12 h-12 bg-gradient-to-r from-purple-400 to-purple-600 rounded-xl flex items-center justify-center">
-              <span className="text-xl">💰</span>
+              <DollarSign className="w-6 h-6 text-white" />
             </div>
           </div>
         </div>
@@ -268,7 +317,9 @@ function Goals() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-600 dark:text-gray-400 text-sm">Success Rate</p>
-              <p className="text-3xl font-bold text-orange-600">{stats.successRate || 0}%</p>
+              <p className="text-3xl font-bold text-orange-600">
+                {stats.successRate !== undefined ? `${stats.successRate}%` : '0%'}
+              </p>
             </div>
             <div className="w-12 h-12 bg-gradient-to-r from-orange-400 to-orange-600 rounded-xl flex items-center justify-center">
               <span className="text-xl">📈</span>
@@ -300,7 +351,7 @@ function Goals() {
       {successMessage && (
         <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl p-4">
           <div className="flex items-center gap-3">
-            <span className="text-green-600">✅</span>
+            <CheckCircle className="w-5 h-5 text-green-600" />
             <p className="text-green-800 dark:text-green-200 font-medium">{successMessage}</p>
           </div>
         </div>
@@ -309,7 +360,7 @@ function Goals() {
       {error && (
         <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4">
           <div className="flex items-center gap-3">
-            <span className="text-red-600">❌</span>
+            <AlertTriangle className="w-5 h-5 text-red-600" />
             <p className="text-red-800 dark:text-red-200 font-medium">{error}</p>
           </div>
         </div>
@@ -319,7 +370,7 @@ function Goals() {
       {filteredGoals.length === 0 ? (
         <div className="text-center py-16">
           <div className="w-24 h-24 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-6">
-            <span className="text-4xl">🎯</span>
+            <Target className="w-12 h-12 text-gray-400" />
           </div>
           <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
             No goals yet
@@ -371,7 +422,7 @@ function Goals() {
                     className="text-red-500 hover:text-red-700 p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors transform hover:scale-110 transition-transform duration-200"
                     title="Delete goal"
                   >
-                    🗑️
+                    <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
               </div>
@@ -434,7 +485,7 @@ function Goals() {
                     }}
                     className="bg-gradient-to-r from-green-600 to-green-700 text-white px-4 py-2 rounded-lg font-medium hover:shadow-lg transition-all duration-300 flex items-center gap-2"
                   >
-                    <span>💰</span>
+                    <Plus className="w-4 h-4" />
                     Add Savings
                   </button>
                 )}
@@ -456,7 +507,7 @@ function Goals() {
                 onClick={() => setShowCreateModal(false)}
                 className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
               >
-                ✕
+                <X className="w-5 h-5" />
               </button>
             </div>
 
@@ -572,7 +623,7 @@ function Goals() {
                 }}
                 className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
               >
-                ✕
+                <X className="w-5 h-5" />
               </button>
             </div>
 
@@ -631,7 +682,7 @@ function Goals() {
           <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 w-full max-w-md transform transition-all duration-300 scale-95 hover:scale-100">
             <div className="text-center">
               <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-red-100 dark:bg-red-900/30 mb-4">
-                <span className="text-2xl">❓</span>
+                <AlertTriangle className="w-8 h-8 text-red-600" />
               </div>
               <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
                 Delete Goal
@@ -650,7 +701,8 @@ function Goals() {
                   onClick={handleDeleteGoal}
                   className="px-6 py-2 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg hover:shadow-xl transition-all transform hover:-translate-y-0.5 hover:shadow-red-500/20 flex items-center gap-2"
                 >
-                  <span>🗑️</span> Delete
+                  <Trash2 className="w-4 h-4" />
+                  Delete
                 </button>
               </div>
             </div>

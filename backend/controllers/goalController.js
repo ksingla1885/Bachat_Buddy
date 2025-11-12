@@ -232,32 +232,32 @@ exports.addSavingsToGoal = async (req, res) => {
     const previousSavedAmount = goal.savedAmount;
     await goal.addSavings(Number(amount));
 
-    let pointsEarned = 0;
-
     // Award points for adding savings (5 points per 1000 INR)
-    pointsEarned += Math.floor(amount / 1000) * 5;
+    const savingsPoints = Math.floor(amount / 1000) * 5;
+    let pointsEarned = savingsPoints;
 
     // Award bonus points if goal is completed
     if (goal.status === 'completed') {
-      pointsEarned += 100; // Goal completion bonus
+      const completionBonus = 100;
+      pointsEarned += completionBonus;
 
       await PointsLog.create({
         userId: req.user.id,
-        points: 100,
+        points: completionBonus,
         reason: 'goal_completed',
-        description: `Earned 100 bonus points for completing goal: ${goal.title}`,
+        description: `Earned ${completionBonus} bonus points for completing goal: ${goal.title}`,
         relatedId: goal._id,
         relatedModel: 'Goal'
       });
     }
 
-    // Award regular savings points
-    if (Math.floor(amount / 1000) * 5 > 0) {
+    // Log savings points if any
+    if (savingsPoints > 0) {
       await PointsLog.create({
         userId: req.user.id,
-        points: Math.floor(amount / 1000) * 5,
+        points: savingsPoints,
         reason: 'goal_savings',
-        description: `Earned ${Math.floor(amount / 1000) * 5} points for adding ₹${amount} to goal: ${goal.title}`,
+        description: `Earned ${savingsPoints} points for adding ₹${amount} to goal: ${goal.title}`,
         relatedId: goal._id,
         relatedModel: 'Goal'
       });
@@ -298,51 +298,54 @@ exports.getGoalStats = async (req, res) => {
   try {
     const userId = req.user.id;
 
-    const stats = await Goal.aggregate([
-      { $match: { userId: new mongoose.Types.ObjectId(userId) } },
-      {
-        $group: {
-          _id: null,
-          totalGoals: { $sum: 1 },
-          completedGoals: {
-            $sum: {
-              $cond: [{ $eq: ['$status', 'completed'] }, 1, 0]
-            }
-          },
-          inProgressGoals: {
-            $sum: {
-              $cond: [{ $eq: ['$status', 'in-progress'] }, 1, 0]
-            }
-          },
-          totalTargetAmount: { $sum: '$targetAmount' },
-          totalSavedAmount: { $sum: '$savedAmount' },
-          overdueGoals: {
-            $sum: {
-              $cond: [
-                {
-                  $and: [
-                    { $eq: ['$status', 'in-progress'] },
-                    { $lt: ['$deadline', new Date()] }
-                  ]
-                },
-                1,
-                0
-              ]
-            }
-          }
+    const goals = await Goal.find({ userId });
+    
+    let totalGoals = goals.length;
+    let totalTargetAmount = 0;
+    let totalSavedAmount = 0;
+    let completedGoals = 0;
+    let inProgressGoals = 0;
+    let overdueGoals = 0;
+    let totalProgress = 0;
+
+    goals.forEach(goal => {
+      const target = parseFloat(goal.targetAmount) || 0;
+      const saved = parseFloat(goal.savedAmount) || 0;
+      
+      totalTargetAmount += target;
+      totalSavedAmount += saved;
+      
+      // Calculate progress percentage for each goal
+      const progress = target > 0 ? (saved / target) * 100 : 0;
+      totalProgress += progress;
+      
+      // Consider a goal completed if saved amount >= target amount
+      if (saved >= target) {
+        completedGoals++;
+      } else {
+        inProgressGoals++;
+        // Check if goal is overdue
+        if (goal.deadline && new Date(goal.deadline) < new Date()) {
+          overdueGoals++;
         }
       }
-    ]);
+    });
+
+    // Calculate average success rate based on progress
+    const successRate = totalGoals > 0 
+      ? Math.round((totalProgress / totalGoals) * 100) / 100 
+      : 0;
 
     res.json({
       status: 'success',
-      data: stats[0] || {
-        totalGoals: 0,
-        completedGoals: 0,
-        inProgressGoals: 0,
-        totalTargetAmount: 0,
-        totalSavedAmount: 0,
-        overdueGoals: 0
+      data: {
+        totalGoals,
+        completedGoals,
+        inProgressGoals,
+        totalTargetAmount,
+        totalSavedAmount,
+        successRate,
+        overdueGoals
       }
     });
   } catch (error) {

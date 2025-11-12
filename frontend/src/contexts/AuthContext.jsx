@@ -26,7 +26,10 @@ export function AuthProvider({ children }) {
   const fetchUser = async () => {
     try {
       const response = await api.get('/auth/profile');
-      setUser(response.data.data.user);
+      console.log('Raw user data from backend:', response.data);
+      const userData = response.data.data.user;
+      console.log('User data being set:', userData);
+      setUser(userData);
     } catch (error) {
       console.error('Error fetching user:', error);
       localStorage.removeItem('token');
@@ -53,6 +56,17 @@ export function AuthProvider({ children }) {
     navigate('/dashboard');
   };
 
+  const updateUser = async (updatedData) => {
+    try {
+      const response = await api.put('/auth/profile', updatedData);
+      setUser(response.data.data.user);
+      return response.data.data.user;
+    } catch (error) {
+      console.error('Error updating user:', error);
+      throw error;
+    }
+  };
+
   const logout = () => {
     localStorage.removeItem('token');
     delete api.defaults.headers.common['Authorization'];
@@ -65,6 +79,7 @@ export function AuthProvider({ children }) {
     login,
     signup,
     logout,
+    updateUser,
     loading
   };
 

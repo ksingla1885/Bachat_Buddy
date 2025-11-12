@@ -5,6 +5,7 @@ const { categorizeTransaction, suggestTags } = require('../utils/categoryTagger'
 const emailService = require('../utils/emailService');
 const { clearUserCache } = require('../middleware/cache');
 const mongoose = require('mongoose');
+const userController = require('./userController');
 
 // ===============================
 // Create Transaction
@@ -76,6 +77,10 @@ exports.createTransaction = async (req, res) => {
     // Clear user cache after creating transaction
     clearUserCache(req.user.id);
 
+    // Calculate monthly savings points in the background
+    userController.awardMonthlySavingsPoints(req.user.id, new Date(transaction.date))
+      .catch(error => console.error('Error calculating monthly savings points:', error));
+
     res.status(201).json({
       status: 'success',
       data: { transaction }
@@ -98,37 +103,72 @@ exports.getTransactions = async (req, res) => {
   try {
     const {
       walletId,
+      walletIds, 
       category,
       type,
       startDate,
       endDate,
+      minAmount, 
+      maxAmount, 
+      search, 
       page = 1,
       limit = 10,
-      includeStats = false // New parameter for stats calculation
+      sortBy = 'date', 
+      sortOrder = 'desc', 
+      includeStats = false 
     } = req.query;
 
     const query = { userId: req.user.id };
 
-    if (walletId) query.walletId = walletId;
+    // Wallet filtering (single or multiple)
+    if (walletIds) {
+      // Support comma-separated wallet IDs
+      const walletIdArray = walletIds.split(',').map(id => id.trim());
+      query.walletId = { $in: walletIdArray };
+    } else if (walletId) {
+      query.walletId = walletId;
+    }
+
+    // Category filtering
     if (category) query.category = category;
+
+    // Type filtering
     if (type) query.type = type;
+
+    // Date range filtering
     if (startDate || endDate) {
       query.date = {};
       if (startDate) query.date.$gte = new Date(startDate);
       if (endDate) query.date.$lte = new Date(endDate);
     }
 
+    // Amount range filtering
+    if (minAmount || maxAmount) {
+      query.amount = {};
+      if (minAmount) query.amount.$gte = parseFloat(minAmount);
+      if (maxAmount) query.amount.$lte = parseFloat(maxAmount);
+    }
+
+    // Search functionality (case-insensitive search in notes)
+    if (search) {
+      query.notes = { $regex: search, $options: 'i' };
+    }
+
     const skip = (page - 1) * parseInt(limit);
     const limitNum = parseInt(limit);
+
+    // Determine sort options
+    const sortOptions = {};
+    sortOptions[sortBy] = sortOrder === 'asc' ? 1 : -1;
 
     // Use Promise.all for parallel execution
     const [transactions, total, stats] = await Promise.all([
       Transaction.find(query)
-        .sort({ date: -1 })
+        .sort(sortOptions)
         .skip(skip)
         .limit(limitNum)
         .populate('walletId', 'name type')
-        .lean(), // Use lean() for better performance
+        .lean(), 
       Transaction.countDocuments(query),
       includeStats === 'true' ? getTransactionStats(req.user.id, query) : null
     ]);
@@ -140,7 +180,10 @@ exports.getTransactions = async (req, res) => {
         pagination: {
           total,
           page: parseInt(page),
-          pages: Math.ceil(total / limitNum)
+          pages: Math.ceil(total / limitNum),
+          limit: limitNum,
+          hasNext: parseInt(page) < Math.ceil(total / limitNum),
+          hasPrev: parseInt(page) > 1
         }
       }
     };
@@ -151,6 +194,7 @@ exports.getTransactions = async (req, res) => {
 
     res.status(200).json(response);
   } catch (error) {
+    console.error('Error fetching transactions:', error);
     res.status(500).json({
       status: 'error',
       message: 'Error fetching transactions',
@@ -320,9 +364,13 @@ exports.updateTransaction = async (req, res) => {
     // Clear user cache after updating transaction
     clearUserCache(req.user.id);
 
-    res.status(200).json({
+    // Recalculate monthly savings points in the background
+    userController.awardMonthlySavingsPoints(req.user.id, new Date(oldTransaction.date))
+      .catch(error => console.error('Error updating monthly savings points:', error));
+
+    res.json({
       status: 'success',
-      data: { transaction: oldTransaction }
+      data: oldTransaction
     });
   } catch (error) {
     res.status(500).json({

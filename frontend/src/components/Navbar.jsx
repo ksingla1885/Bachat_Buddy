@@ -6,6 +6,7 @@ import UserMenu from './UserMenu';
 import NavigationLinks from './NavigationLinks';
 import MobileMenu from './MobileMenu';
 import { useAuth } from '../contexts/AuthContext';
+import { Menu } from 'lucide-react';
 
 function Navbar() {
   const { user } = useAuth();
@@ -48,9 +49,7 @@ function Navbar() {
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                 className="md:hidden p-2 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-300"
               >
-                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
+                <Menu className="h-6 w-6" />
               </button>
             )}
           </div>

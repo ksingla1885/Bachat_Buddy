@@ -218,44 +218,44 @@ function Landing() {
 
   const teamMembers = [
     {
-      name: 'Team Member 1',
+      name: 'Ketan Kumar',
       role: 'Full Stack Developer & Project Lead',
       avatar: 'KS',
-      // photo: '/path/to/member1.jpg', // Add photo path when available
+      photo: '/images/team/ketan.jpeg',
       skills: ['React', 'Node.js', 'MongoDB', 'System Architecture'],
       description: 'Led the development of BachatBuddy with expertise in full-stack development and project management.',
       github: 'https://github.com/ksingla1885',
-      linkedin: 'https://linkedin.com/in/kunal-singla'
+      linkedin: 'https://www.linkedin.com/in/ketan-kumar-521249279/'
     },
     {
-      name: 'Team Member 2',
+      name: 'Mohit',
       role: 'Frontend Developer',
       avatar: 'MS',
-      // photo: '/path/to/member2.jpg', // Add photo path when available
+      photo: '/images/team/mohit.jpeg',
       skills: ['React', 'Tailwind CSS', 'UI/UX Design', 'Responsive Design'],
       description: 'Specialized in creating beautiful and intuitive user interfaces with modern design principles.',
       github: 'https://github.com/teammember2',
       linkedin: 'https://linkedin.com/in/teammember2'
     },
     {
-      name: 'Team Member 3',
+      name: 'Mayank Singla',
       role: 'Backend Developer',
       avatar: 'MY',
-      // photo: '/path/to/member3.jpg', // Add photo path when available
+      photo: '/images/team/mayank.jpeg', 
       skills: ['Node.js', 'Express.js', 'Database Design', 'API Development'],
       description: 'Focused on building robust backend systems and secure API endpoints for the application.',
-      github: 'https://github.com/teammember3',
-      linkedin: 'https://linkedin.com/in/teammember3'
+      github: 'https://github.com/Mayank-Singla23',
+      linkedin: 'https://www.linkedin.com/in/mayank-singla-629806289/'
     },
     {
-      name: 'Team Member 4',
+      name: 'Paramveer',
       role: 'DevOps & Quality Assurance',
       avatar: 'PR',
-      // photo: '/path/to/member4.jpg', // Add photo path when available
+      photo: '/images/team/param.jpeg', 
       skills: ['Testing', 'Deployment', 'Performance Optimization', 'Security'],
       description: 'Ensured application quality, performance optimization, and smooth deployment processes.',
-      github: 'https://github.com/teammember4',
-      linkedin: 'https://linkedin.com/in/teammember4'
+      github: 'https://github.com/Paramveer1289',
+      linkedin: 'https://www.linkedin.com/in/paramveer-singh-75897335a/'
     }
   ];
 
@@ -356,7 +356,7 @@ function Landing() {
                 <span className="text-white font-bold text-4xl">₹</span>
               </div>
               <h1
-                className="text-4xl md:text-6xl font-bold mb-6"
+                className="text-4xl md:text-6xl font-bold mb-6 w-full max-w-full overflow-visible"
                 style={{
                   transform: `translate3d(${mousePosition.x * 2}px, ${mousePosition.y * 2}px, 0)`,
                 }}
@@ -365,10 +365,10 @@ function Landing() {
                   BachatBuddy
                 </span>
               </h1>
-              <p className="text-xl md:text-2xl text-gray-600 dark:text-gray-300 mb-8 max-w-3xl mx-auto">
+              <p className="text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-3xl mx-auto w-full overflow-visible">
                 Your Smart Financial Companion for Better Money Management
               </p>
-              <p className="text-lg text-gray-500 dark:text-gray-400 mb-12 max-w-2xl mx-auto">
+              <p className="text-lg text-gray-500 dark:text-gray-400 mb-12 max-w-2xl mx-auto w-full overflow-visible">
                 Take control of your finances with our comprehensive personal finance management platform.
                 Track expenses, manage budgets, monitor debts, set saving goals, and achieve your financial dreams with ease.
               </p>
@@ -382,7 +382,7 @@ function Landing() {
             >
               <button
                 onClick={handleGetStarted}
-                className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-8 py-4 rounded-xl font-semibold text-lg hover:from-blue-600 hover:to-purple-700 transform hover:scale-105 hover:-translate-y-1 transition-all duration-300 shadow-large hover:shadow-2xl"
+                className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-8 py-4 rounded-xl font-semibold text-lg hover:from-blue-600 hover:to-purple-700 transform hover:scale-105 hover:-translate-y-1 transition-all duration-300 shadow-large hover:shadow-2xl w-full sm:w-auto"
                 style={{
                   transform: `perspective(1000px) rotateX(${mousePosition.y * 5}deg) rotateY(${mousePosition.x * 5}deg) scale(${isVisible.hero ? 1 : 0.8})`,
                 }}
@@ -392,7 +392,7 @@ function Landing() {
               </button>
               <Link
                 to="/login"
-                className="border-2 border-white text-white bg-transparent px-8 py-4 rounded-xl font-semibold text-lg hover:bg-white hover:text-blue-600 transform hover:scale-105 hover:-translate-y-1 transition-all duration-300 backdrop-blur-sm"
+                className="border-2 border-white text-white bg-transparent px-8 py-4 rounded-xl font-semibold text-lg hover:bg-white hover:text-blue-600 transform hover:scale-105 hover:-translate-y-1 transition-all duration-300 backdrop-blur-sm w-full sm:w-auto"
                 style={{
                   transform: `perspective(1000px) rotateX(${mousePosition.y * 3}deg) rotateY(${mousePosition.x * 3}deg)`,
                 }}
@@ -410,7 +410,7 @@ function Landing() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2
-              className="text-4xl md:text-5xl font-bold text-gradient mb-6"
+              className="text-3xl md:text-4xl lg:text-5xl font-bold text-gradient mb-6 leading-tight"
               style={{
                 transform: `translate3d(${mousePosition.x * 1}px, ${mousePosition.y * 1}px, 0)`,
               }}
@@ -422,7 +422,7 @@ function Landing() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
             {features.map((feature, index) => (
               <div
                 key={index}
@@ -449,7 +449,7 @@ function Landing() {
                   {feature.icon}
                 </div>
                 <h3
-                  className="text-2xl font-bold text-gray-900 dark:text-white mb-4 relative z-10"
+                  className="text-2xl font-bold text-gray-900 dark:text-white mb-4 relative z-10 w-full overflow-visible"
                   style={{
                     transform: `translate3d(${mousePosition.x * 2}px, ${mousePosition.y * 2}px, 0)`,
                   }}
@@ -457,7 +457,7 @@ function Landing() {
                   {feature.title}
                 </h3>
                 <p
-                  className="text-gray-600 dark:text-gray-300 leading-relaxed relative z-10"
+                  className="text-gray-600 dark:text-gray-300 leading-relaxed relative z-10 w-full overflow-visible"
                   style={{
                     transform: `translate3d(${mousePosition.x * 1}px, ${mousePosition.y * 1}px, 0)`,
                   }}
@@ -478,7 +478,7 @@ function Landing() {
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div className="animate-fadeInUp">
-              <h2 className="text-4xl md:text-5xl font-bold text-gradient mb-6">
+              <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gradient mb-6 leading-tight w-full overflow-visible">
                 About BachatBuddy
               </h2>
               <p className="text-lg text-gray-600 dark:text-gray-300 mb-6 leading-relaxed">
@@ -540,7 +540,7 @@ function Landing() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
             {teamMembers.map((member, index) => (
               <div
                 key={index}
@@ -591,7 +591,7 @@ function Landing() {
 
                 {/* Member Info */}
                 <h3
-                  className="text-xl font-bold text-gray-900 dark:text-white mb-2 relative z-10"
+                  className="text-xl font-bold text-gray-900 dark:text-white mb-2 relative z-10 w-full overflow-visible"
                   style={{
                     transform: `translate3d(${mousePosition.x * 1}px, ${mousePosition.y * 1}px, 0)`,
                   }}
@@ -599,7 +599,7 @@ function Landing() {
                   {member.name}
                 </h3>
                 <p
-                  className="text-blue-600 dark:text-blue-400 font-semibold mb-3 relative z-10"
+                  className="text-blue-600 dark:text-blue-400 font-semibold mb-3 relative z-10 w-full overflow-visible"
                   style={{
                     transform: `translate3d(${mousePosition.x * 0.5}px, ${mousePosition.y * 0.5}px, 0)`,
                   }}
@@ -607,7 +607,7 @@ function Landing() {
                   {member.role}
                 </p>
                 <p
-                  className="text-gray-600 dark:text-gray-300 text-sm mb-4 leading-relaxed relative z-10"
+                  className="text-gray-600 dark:text-gray-300 text-sm mb-4 leading-relaxed relative z-10 w-full overflow-visible"
                   style={{
                     transform: `translate3d(${mousePosition.x * 0.3}px, ${mousePosition.y * 0.3}px, 0)`,
                   }}
@@ -670,7 +670,7 @@ function Landing() {
           </div>
 
           {/* Team Stats */}
-          <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
+          <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 text-center">
             <div
               className="animate-fadeInUp"
               style={{
@@ -678,8 +678,8 @@ function Landing() {
                 transform: `translate3d(${mousePosition.x * 1}px, ${mousePosition.y * 1}px, 0)`,
               }}
             >
-              <div className="text-4xl font-bold text-gradient mb-2">4</div>
-              <p className="text-gray-600 dark:text-gray-300">Dedicated Developers</p>
+              <div className="text-4xl font-bold text-gradient mb-2 w-full text-center overflow-visible">4</div>
+              <p className="text-gray-600 dark:text-gray-300 w-full text-center overflow-visible">Dedicated Developers</p>
             </div>
             <div
               className="animate-fadeInUp"
@@ -688,8 +688,8 @@ function Landing() {
                 transform: `translate3d(${mousePosition.x * 0.8}px, ${mousePosition.y * 0.8}px, 0)`,
               }}
             >
-              <div className="text-4xl font-bold text-gradient mb-2">6+</div>
-              <p className="text-gray-600 dark:text-gray-300">Months of Development</p>
+              <div className="text-4xl font-bold text-gradient mb-2 w-full text-center overflow-visible">6+</div>
+              <p className="text-gray-600 dark:text-gray-300 w-full text-center overflow-visible">Months of Development</p>
             </div>
             <div
               className="animate-fadeInUp"
@@ -698,8 +698,8 @@ function Landing() {
                 transform: `translate3d(${mousePosition.x * 0.6}px, ${mousePosition.y * 0.6}px, 0)`,
               }}
             >
-              <div className="text-4xl font-bold text-gradient mb-2">100%</div>
-              <p className="text-gray-600 dark:text-gray-300">Passion & Dedication</p>
+              <div className="text-4xl font-bold text-gradient mb-2 w-full text-center overflow-visible">100%</div>
+              <p className="text-gray-600 dark:text-gray-300 w-full text-center overflow-visible">Passion & Dedication</p>
             </div>
           </div>
         </div>
@@ -710,7 +710,7 @@ function Landing() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2
-              className="text-4xl md:text-5xl font-bold text-gradient mb-6"
+              className="text-3xl md:text-4xl lg:text-5xl font-bold text-gradient mb-8 leading-tight"
               style={{
                 transform: `translate3d(${mousePosition.x * 1}px, ${mousePosition.y * 1}px, 0)`,
               }}
@@ -722,7 +722,7 @@ function Landing() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8">
             {whyChooseUs.map((item, index) => (
               <div
                 key={index}
@@ -750,7 +750,7 @@ function Landing() {
                 </div>
                 <div className="relative z-10">
                   <h3
-                    className="text-2xl font-bold text-gray-900 dark:text-white mb-3"
+                    className="text-2xl font-bold text-gray-900 dark:text-white mb-3 relative z-10 w-full overflow-visible"
                     style={{
                       transform: `translate3d(${mousePosition.x * 1}px, ${mousePosition.y * 1}px, 0)`,
                     }}
@@ -758,7 +758,7 @@ function Landing() {
                     {item.title}
                   </h3>
                   <p
-                    className="text-gray-600 dark:text-gray-300 leading-relaxed"
+                    className="text-gray-600 dark:text-gray-300 leading-relaxed relative z-10 w-full overflow-visible"
                     style={{
                       transform: `translate3d(${mousePosition.x * 0.5}px, ${mousePosition.y * 0.5}px, 0)`,
                     }}
@@ -778,9 +778,9 @@ function Landing() {
       {/* Customer Reviews Section */}
       <section ref={reviewsRef} className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-gray-900 dark:to-purple-900">
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
+          <div className="text-center mb-16 px-4">
             <h2
-              className="text-4xl md:text-5xl font-bold text-gradient mb-6"
+              className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold text-gradient mb-6 leading-tight w-full max-w-full overflow-visible whitespace-nowrap min-w-0"
               style={{
                 transform: `translate3d(${mousePosition.x * 1}px, ${mousePosition.y * 1}px, 0)`,
               }}
@@ -882,7 +882,7 @@ function Landing() {
       <section className="py-20 px-4 sm:px-6 lg:px-8 bg-white dark:bg-gray-800">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold text-gradient mb-6">
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gradient mb-6 leading-tight">
               Get In Touch
             </h2>
             <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">

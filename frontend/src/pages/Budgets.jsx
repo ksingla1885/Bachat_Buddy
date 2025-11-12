@@ -1,6 +1,21 @@
 import { useState, useEffect } from "react";
 import * as api from "../services/api";
 import BudgetForm from "../components/BudgetForm";
+import {
+  Calendar,
+  Target,
+  Edit3,
+  ClipboardList,
+  FolderOpen,
+  TrendingUp,
+  DollarSign,
+  TrendingDown,
+  Zap,
+  CheckCircle,
+  XCircle,
+  Plus,
+  Trash2
+} from 'lucide-react';
 
 const Budgets = () => {
   const [budgets, setBudgets] = useState([]);
@@ -92,6 +107,19 @@ const Budgets = () => {
       ...formData // Override with form-compatible data
     });
     setIsEditing(true);
+  };
+
+  const handleCreateBudget = async (data) => {
+    try {
+      const [year, month] = currentMonth.split("-").map(Number);
+      await api.createBudget({ ...data, month, year });
+      setIsCreating(false);
+      await fetchBudgets();
+      setInfoMessage('Budget created successfully!');
+      setTimeout(() => setInfoMessage(''), 3000);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Error creating budget');
+    }
   };
 
   const handleUpdateBudget = async (data) => {
@@ -315,7 +343,7 @@ const Budgets = () => {
               </svg>
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">📅 Budget Period</h3>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Budget Period</h3>
               <p className="text-sm text-gray-600 dark:text-gray-400">Select the month to view budgets</p>
             </div>
           </div>
@@ -340,7 +368,7 @@ const Budgets = () => {
               </svg>
             </div>
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-              🎯 Create New Budget
+              Create New Budget
             </h2>
             <p className="text-gray-600 dark:text-gray-400">
               Set spending limits for your categories
@@ -371,7 +399,7 @@ const Budgets = () => {
               </svg>
             </div>
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-              ✏️ Edit Budget
+              Edit Budget
             </h2>
             <p className="text-gray-600 dark:text-gray-400">
               Update your budget amount and category
@@ -399,7 +427,6 @@ const Budgets = () => {
       <div className="card-modern overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
-            <span className="mr-2">📋</span>
             Budget Overview
           </h3>
         </div>
@@ -426,22 +453,22 @@ const Budgets = () => {
               <thead className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-800">
                 <tr>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
-                    📂 Category
+                    Category
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
-                    🎯 Budgeted
+                    Budgeted
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
-                    💸 Spent
+                    Spent
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
-                    💰 Remaining
+                    Remaining
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
-                    📊 Progress
+                    Progress
                   </th>
                   <th className="px-6 py-4 text-right text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
-                    ⚡ Actions
+                    Actions
                   </th>
                 </tr>
               </thead>
@@ -459,7 +486,7 @@ const Budgets = () => {
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
                           <div className="w-10 h-10 bg-gradient-to-r from-indigo-400 to-purple-500 rounded-lg flex items-center justify-center mr-3">
-                            <span className="text-white text-sm font-bold">📂</span>
+                            <FolderOpen className="w-5 h-5 text-white" />
                           </div>
                           <span className="text-sm font-medium text-gray-900 dark:text-white">{item.category}</span>
                         </div>

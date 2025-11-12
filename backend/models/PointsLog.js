@@ -15,13 +15,13 @@ const pointsLogSchema = new mongoose.Schema({
     type: String,
     required: true,
     enum: [
-      'budget_under_limit',
-      'goal_completed',
-      'goal_savings',
-      'recurring_saving_streak',
-      'debt_paid_off',
-      'first_transaction',
-      'weekly_login_streak'
+      'budget_under_limit',      // 50 points for staying under budget
+      'goal_completed',          // 100 points for completing a goal
+      'goal_savings',            // 5 points per ₹1,000 saved
+      'debt_payment',            // 10 points per ₹1,000 paid
+      'debt_completed',          // 1000 points for completing a debt
+      'weekly_login_streak',     // Points for weekly login streak
+      'monthly_savings'          // 5 points per ₹1,000 saved (monthly income - expenses)
     ]
   },
   description: {

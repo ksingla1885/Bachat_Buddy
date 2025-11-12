@@ -128,6 +128,15 @@ export const addSavingsToGoal = (id, data) =>
 //
 // ----------------- Report API -----------------
 //
+export const getSpendingAnalysis = (params) =>
+  api.get('/spending-analysis', { params });
+
+export const getIncomeReport = (params) =>
+  api.get('/income-report', { params });
+
+export const getBudgetReport = (params) =>
+  api.get('/budget-report', { params });
+
 export const exportTransactionsCSV = (params) =>
   api.get("/reports/csv/transactions", { params });
 
@@ -151,5 +160,19 @@ export const getPointsHistory = (params) =>
 
 export const getUserAchievements = () =>
   api.get("/users/achievements");
+
+// ----------------- Monthly Savings Tiers API -----------------
+//
+export const getCurrentMonthTier = () =>
+  api.get("/monthly-tiers/current");
+
+export const getMonthlyTiersHistory = (params) =>
+  api.get("/monthly-tiers/history", { params });
+
+export const calculateCurrentMonthTier = () =>
+  api.post("/monthly-tiers/calculate");
+
+export const getTierStats = () =>
+  api.get("/monthly-tiers/stats");
 
 export default api;

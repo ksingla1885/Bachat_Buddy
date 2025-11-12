@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
+import { expenseCategories, incomeCategories } from '../config/categories';
 
 const TransactionForm = ({ onSubmit, wallets, refreshWallets, initialData = null }) => {
   const [isLoading, setIsLoading] = useState(false);
@@ -146,23 +147,15 @@ const TransactionForm = ({ onSubmit, wallets, refreshWallets, initialData = null
               className="block w-full pl-3 pr-10 py-2.5 bg-gray-800 border border-gray-700 rounded-lg text-gray-200 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 appearance-none"
             >
               <option value="" className="text-gray-500">Select Category</option>
-              {transactionType === 'Income' ? (
-                <>
-                  <option value="Salary" className="bg-gray-800 text-green-400">💰 Salary</option>
-                  <option value="Investment" className="bg-gray-800 text-green-400">📈 Investment</option>
-                  <option value="Business" className="bg-gray-800 text-green-400">💼 Business</option>
-                  <option value="Other Income" className="bg-gray-800 text-green-400">💵 Other Income</option>
-                </>
-              ) : (
-                <>
-                  <option value="Food" className="bg-gray-800 text-red-400">🍔 Food</option>
-                  <option value="Transport" className="bg-gray-800 text-red-400">🚗 Transport</option>
-                  <option value="Entertainment" className="bg-gray-800 text-red-400">🎬 Entertainment</option>
-                  <option value="Shopping" className="bg-gray-800 text-red-400">🛍️ Shopping</option>
-                  <option value="Bills" className="bg-gray-800 text-red-400">📝 Bills</option>
-                  <option value="Other Expense" className="bg-gray-800 text-red-400">💸 Other Expense</option>
-                </>
-              )}
+              {(transactionType === 'Income' ? incomeCategories : expenseCategories).map((category) => (
+                <option 
+                  key={category.name}
+                  value={category.name}
+                  className={`bg-gray-800 ${transactionType === 'Income' ? 'text-green-400' : 'text-red-400'}`}
+                >
+                  {category.icon} {category.name}
+                </option>
+              ))}
             </select>
             <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
               <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">

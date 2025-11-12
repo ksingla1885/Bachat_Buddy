@@ -1,6 +1,37 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { navigationItems } from '../config/navigation';
+import {
+  LayoutDashboard,
+  CreditCard,
+  Wallet,
+  ArrowLeftRight,
+  TrendingUp,
+  Calculator,
+  BarChart3,
+  Trophy,
+  Target,
+  Medal,
+  ChevronDown
+} from 'lucide-react';
+
+const iconMap = {
+  LayoutDashboard,
+  CreditCard,
+  Wallet,
+  ArrowLeftRight,
+  TrendingUp,
+  Calculator,
+  BarChart3,
+  Trophy,
+  Target,
+  Medal
+};
+
+function IconRenderer({ iconName, className = "h-5 w-5" }) {
+  const IconComponent = iconMap[iconName];
+  return IconComponent ? <IconComponent className={className} /> : null;
+}
 
 function MobileMenu({ isOpen, onClose }) {
   const location = useLocation();
@@ -46,17 +77,10 @@ function MobileMenu({ isOpen, onClose }) {
                   } px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 flex items-center justify-between w-full`}
                 >
                   <div className="flex items-center space-x-3">
-                    <span className="text-lg">{item.icon}</span>
+                    <IconRenderer iconName={item.icon} className="h-5 w-5" />
                     <span>{item.name}</span>
                   </div>
-                  <svg
-                    className={`h-5 w-5 transition-transform duration-300 ${expandedItems[item.name] ? 'rotate-180' : ''}`}
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
+                  <IconRenderer iconName="ChevronDown" className={`h-5 w-5 transition-transform duration-300 ${expandedItems[item.name] ? 'rotate-180' : ''}`} />
                 </button>
 
                 {/* Expanded dropdown items */}
@@ -73,7 +97,7 @@ function MobileMenu({ isOpen, onClose }) {
                             : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800'
                         } px-4 py-2 rounded-lg text-sm flex items-center space-x-3 transition-all duration-300 block`}
                       >
-                        <span className="text-base">{child.icon}</span>
+                        <IconRenderer iconName={child.icon} className="h-4 w-4" />
                         <span>{child.name}</span>
                       </Link>
                     ))}
@@ -95,7 +119,7 @@ function MobileMenu({ isOpen, onClose }) {
                   : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
               } px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 flex items-center space-x-3`}
             >
-              <span className="text-lg">{item.icon}</span>
+              <IconRenderer iconName={item.icon} className="h-5 w-5" />
               <span>{item.name}</span>
             </Link>
           );

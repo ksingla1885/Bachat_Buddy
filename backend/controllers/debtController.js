@@ -246,7 +246,9 @@ exports.updateDebtPayment = async (req, res) => {
     await debt.updateRemainingAmount(Number(paymentAmount));
 
     // Award points for debt payment (10 points per 1000 INR paid)
-    const pointsEarned = Math.floor((previousRemainingAmount - debt.remainingAmount) / 1000) * 10;
+    const actualPaymentAmount = previousRemainingAmount - debt.remainingAmount;
+    const pointsEarned = Math.floor(actualPaymentAmount / 1000) * 10;
+    
     if (pointsEarned > 0) {
       await User.findByIdAndUpdate(
         req.user.id,
@@ -256,8 +258,26 @@ exports.updateDebtPayment = async (req, res) => {
       await PointsLog.create({
         userId: req.user.id,
         points: pointsEarned,
-        reason: 'debt_paid_off',
-        description: `Earned ${pointsEarned} points for paying off debt: ${debt.title}`,
+        reason: 'debt_payment',
+        description: `Earned ${pointsEarned} points for paying off ₹${paymentAmount} of debt: ${debt.title}`,
+        relatedId: debt._id,
+        relatedModel: 'Debt'
+      });
+    }
+    
+    // Check if debt is fully paid and award completion bonus
+    if (debt.remainingAmount === 0 && debt.status !== 'completed') {
+      const completionBonus = 1000;
+      await User.findByIdAndUpdate(
+        req.user.id,
+        { $inc: { points: completionBonus } }
+      );
+      
+      await PointsLog.create({
+        userId: req.user.id,
+        points: completionBonus,
+        reason: 'debt_completed',
+        description: `Earned ${completionBonus} bonus points for fully paying off debt: ${debt.title}`,
         relatedId: debt._id,
         relatedModel: 'Debt'
       });

@@ -1,10 +1,18 @@
 const express = require('express');
 const router = express.Router();
 const NetWorth = require('../models/NetWorth');
+const reportController = require('../controllers/reportController');
 const auth = require('../middleware/auth');
 
 // Apply auth middleware to all routes
 router.use(auth);
+
+// ================================
+// Report Analysis Endpoints
+// ================================
+router.get('/spending-analysis', reportController.getSpendingAnalysis);
+router.get('/income', reportController.getIncomeReport);
+router.get('/budget', reportController.getBudgetReport);
 
 // Net Worth API Endpoints
 // ================================

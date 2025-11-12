@@ -2,6 +2,40 @@ import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { navigationItems } from '../config/navigation';
 import { useScreenSize } from '../hooks/useScreenSize';
+import {
+  LayoutDashboard,
+  CreditCard,
+  Wallet,
+  ArrowLeftRight,
+  TrendingUp,
+  Calculator,
+  BarChart3,
+  Trophy,
+  Target,
+  Medal,
+  MoreHorizontal,
+  ChevronDown
+} from 'lucide-react';
+
+const iconMap = {
+  LayoutDashboard,
+  CreditCard,
+  Wallet,
+  ArrowLeftRight,
+  TrendingUp,
+  Calculator,
+  BarChart3,
+  Trophy,
+  Target,
+  Medal,
+  MoreHorizontal,
+  ChevronDown
+};
+
+function IconRenderer({ iconName, className = "h-5 w-5" }) {
+  const IconComponent = iconMap[iconName];
+  return IconComponent ? <IconComponent className={className} /> : null;
+}
 
 function NavigationLinks() {
   const location = useLocation();
@@ -72,18 +106,11 @@ function NavigationLinks() {
                   } px-3 py-2 rounded-xl text-sm font-medium transition-all duration-300 flex items-center space-x-2 group`}
                 >
                   <span className="text-lg group-hover:scale-110 transition-transform duration-300">
-                    {item.icon}
+                    <IconRenderer iconName={item.icon} className="h-5 w-5" />
                   </span>
                   <span className="hidden lg:inline">{item.name}</span>
                   <span className="lg:hidden text-xs font-bold">{item.name.split(' ')[0]}</span>
-                  <svg
-                    className={`h-4 w-4 transition-transform duration-300 ${openDropdown === item.name ? 'rotate-180' : ''}`}
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
+                  <IconRenderer iconName="ChevronDown" className={`h-4 w-4 transition-transform duration-300 ${openDropdown === item.name ? 'rotate-180' : ''}`} />
                 </button>
 
                 {/* Dropdown Menu */}
@@ -112,7 +139,7 @@ function NavigationLinks() {
                                 : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
                             } px-4 py-2 text-sm flex items-center space-x-3 transition-all duration-300 block w-full`}
                           >
-                            <span className="text-lg">{child.icon}</span>
+                            <IconRenderer iconName={child.icon} className="h-5 w-5" />
                             <span>{child.name}</span>
                           </Link>
                         ))}
@@ -136,7 +163,7 @@ function NavigationLinks() {
               } px-3 py-2 rounded-xl text-sm font-medium transition-all duration-300 flex items-center space-x-2 group`}
             >
               <span className="text-lg group-hover:scale-110 transition-transform duration-300">
-                {item.icon}
+                <IconRenderer iconName={item.icon} className="h-5 w-5" />
               </span>
               <span className="hidden lg:inline">{item.name}</span>
               <span className="lg:hidden text-xs font-bold">{item.name.split(' ')[0]}</span>
@@ -152,9 +179,7 @@ function NavigationLinks() {
             onClick={(e) => handleDropdownToggle('more', e)}
             className="p-2 rounded-xl text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-300 flex items-center space-x-2"
           >
-            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-            </svg>
+            <IconRenderer iconName="MoreHorizontal" className="h-5 w-5" />
             <span className="hidden lg:inline text-sm font-medium">More</span>
           </button>
 
@@ -188,7 +213,7 @@ function NavigationLinks() {
                                   : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
                               } px-4 py-2 text-sm flex items-center space-x-3 transition-all duration-300 block w-full pl-6`}
                             >
-                              <span className="text-lg">{child.icon}</span>
+                              <IconRenderer iconName={child.icon} className="h-5 w-5" />
                               <span>{child.name}</span>
                             </Link>
                           ))}
@@ -207,7 +232,7 @@ function NavigationLinks() {
                             : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
                         } px-4 py-2 text-sm flex items-center space-x-3 transition-all duration-300 block w-full`}
                       >
-                        <span className="text-lg">{item.icon}</span>
+                        <IconRenderer iconName={item.icon} className="h-5 w-5" />
                         <span>{item.name}</span>
                       </Link>
                     );

@@ -6,6 +6,195 @@ const NetWorth = require('../models/NetWorth');
 const mongoose = require('mongoose');
 
 // ================================
+// Get Spending Analysis
+// ================================
+exports.getSpendingAnalysis = async (req, res) => {
+  try {
+    const { startDate, endDate } = req.query;
+    const userId = req.user.id;
+
+    const matchStage = {
+      userId: new mongoose.Types.ObjectId(userId),
+      type: 'Expense',
+    };
+
+    if (startDate || endDate) {
+      matchStage.date = {};
+      if (startDate) matchStage.date.$gte = new Date(startDate);
+      if (endDate) matchStage.date.$lte = new Date(endDate);
+    }
+
+    const spendingByCategory = await Transaction.aggregate([
+      { $match: matchStage },
+      {
+        $group: {
+          _id: '$category',
+          total: { $sum: { $abs: '$amount' } },
+          count: { $sum: 1 }
+        }
+      },
+      { $sort: { total: -1 } }
+    ]);
+
+    const totalSpending = spendingByCategory.reduce((sum, item) => sum + item.total, 0);
+
+    // Add percentage to each category
+    const categories = spendingByCategory.map(item => ({
+      ...item,
+      percentage: Math.round((item.total / totalSpending) * 100) || 0
+    }));
+
+    res.json({
+      status: 'success',
+      data: {
+        categories,
+        totalSpending,
+        period: {
+          start: startDate || 'Beginning',
+          end: endDate || 'Now'
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Get spending analysis error:', error);
+    res.status(500).json({
+      status: 'error',
+      message: 'Failed to generate spending analysis'
+    });
+  }
+};
+
+// ================================
+// Get Income Report
+// ================================
+exports.getIncomeReport = async (req, res) => {
+  try {
+    const { startDate, endDate } = req.query;
+    const userId = req.user.id;
+
+    const matchStage = {
+      userId: new mongoose.Types.ObjectId(userId),
+      type: 'Income',
+    };
+
+    if (startDate || endDate) {
+      matchStage.date = {};
+      if (startDate) matchStage.date.$gte = new Date(startDate);
+      if (endDate) matchStage.date.$lte = new Date(endDate);
+    }
+
+    const incomeBySource = await Transaction.aggregate([
+      { $match: matchStage },
+      {
+        $group: {
+          _id: '$category',
+          total: { $sum: '$amount' },
+          count: { $sum: 1 }
+        }
+      },
+      { $sort: { total: -1 } }
+    ]);
+
+    const totalIncome = incomeBySource.reduce((sum, item) => sum + item.total, 0);
+
+    // Add percentage to each source
+    const sources = incomeBySource.map(item => ({
+      ...item,
+      percentage: Math.round((item.total / totalIncome) * 100) || 0
+    }));
+
+    res.json({
+      status: 'success',
+      data: {
+        sources,
+        totalIncome,
+        period: {
+          start: startDate || 'Beginning',
+          end: endDate || 'Now'
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Get income report error:', error);
+    res.status(500).json({
+      status: 'error',
+      message: 'Failed to generate income report'
+    });
+  }
+};
+
+// ================================
+// Get Budget Report
+// ================================
+exports.getBudgetReport = async (req, res) => {
+  try {
+    const { startDate, endDate } = req.query;
+    const userId = req.user.id;
+
+    // Get all budgets
+    const budgets = await Budget.find({ userId });
+
+    // Get transactions for the period
+    const matchStage = {
+      userId: new mongoose.Types.ObjectId(userId),
+      type: 'Expense',
+    };
+
+    if (startDate || endDate) {
+      matchStage.date = {};
+      if (startDate) matchStage.date.$gte = new Date(startDate);
+      if (endDate) matchStage.date.$lte = new Date(endDate);
+    }
+
+    const categorySpending = await Transaction.aggregate([
+      { $match: matchStage },
+      {
+        $group: {
+          _id: '$category',
+          spent: { $sum: { $abs: '$amount' } }
+        }
+      }
+    ]);
+
+    // Map spending to budgets
+    const budgetReport = budgets.map(budget => {
+      const spending = categorySpending.find(s => s._id === budget.category);
+      const spent = spending ? spending.spent : 0;
+      const remaining = Math.max(0, budget.amount - spent);
+      const percentage = Math.min(100, Math.round((spent / budget.amount) * 100));
+
+      return {
+        category: budget.category,
+        budget: budget.amount,
+        spent,
+        remaining,
+        percentage,
+        isOverBudget: spent > budget.amount
+      };
+    });
+
+    res.json({
+      status: 'success',
+      data: {
+        budgets: budgetReport,
+        period: {
+          start: startDate || 'Beginning',
+          end: endDate || 'Now'
+        },
+        totalBudget: budgets.reduce((sum, b) => sum + b.amount, 0),
+        totalSpent: budgetReport.reduce((sum, b) => sum + b.spent, 0)
+      }
+    });
+  } catch (error) {
+    console.error('Get budget report error:', error);
+    res.status(500).json({
+      status: 'error',
+      message: 'Failed to generate budget report'
+    });
+  }
+};
+
+// ================================
 // Export Transactions CSV (Report-specific)
 // ================================
 exports.exportTransactionsCSV = async (req, res) => {

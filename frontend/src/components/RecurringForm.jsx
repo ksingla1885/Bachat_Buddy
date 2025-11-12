@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
+import { expenseCategories, incomeCategories } from '../config/categories';
 
 function RecurringForm({ onSubmit, wallets, initialData = null }) {
   const [isLoading, setIsLoading] = useState(false);
@@ -10,17 +11,10 @@ function RecurringForm({ onSubmit, wallets, initialData = null }) {
     }
   });
 
-  const categories = [
-    'Groceries',
-    'Transportation',
-    'Dining',
-    'Shopping',
-    'Entertainment',
-    'Bills',
-    'Health',
-    'Education',
-    'Others'
-  ];
+  const type = watch('type');
+  const categories = type === 'Expense' 
+    ? expenseCategories.map(cat => cat.name)
+    : incomeCategories.map(cat => cat.name);
 
   const handleFormSubmit = async (data) => {
     setIsLoading(true);
