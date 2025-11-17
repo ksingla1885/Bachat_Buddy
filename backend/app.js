@@ -21,9 +21,16 @@ const monthlySavingsTierRoutes = require('./routes/monthlySavingsTierRoutes');
 // Create Express app
 const app = express();
 
+// Configure CORS
+const corsOptions = {
+  origin: 'http://localhost:3000',
+  credentials: true,
+  optionsSuccessStatus: 200 // For legacy browser support
+};
+
 // Middleware
 app.use(express.json());
-app.use(cors());
+app.use(cors(corsOptions));
 app.use(morgan('dev'));
 
 // Routes

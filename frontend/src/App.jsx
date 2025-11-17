@@ -1,8 +1,8 @@
 import React from 'react';
-import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
+import { Route, Routes, Navigate, unstable_HistoryRouter as HistoryRouter } from 'react-router-dom';
+import { createBrowserHistory } from 'history';
 import { ThemeProvider } from './contexts/ThemeContext';
-import { AuthProvider } from './contexts/AuthContext';
-import { useAuth } from './contexts/AuthContext';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Navbar from './components/Navbar';
 import Landing from './pages/Landing';
 import Login from './pages/Login';
@@ -16,6 +16,17 @@ import Goals from './pages/Goals';
 import Achievements from './pages/Achievements';
 import Reports from './pages/Reports';
 import Profile from './pages/Profile';
+
+// Create a custom history object to access navigation outside components
+const history = createBrowserHistory({ window });
+
+// Configure future flags for React Router v7
+const routerConfig = {
+  future: {
+    v7_startTransition: true,
+    v7_relativeSplatPath: true
+  }
+};
 
 // Protected Route Component
 function ProtectedRoute({ children }) {
@@ -48,7 +59,10 @@ function AppLayout({ children, showNavbar = true, showContainer = true }) {
 
 function App() {
   return (
-    <Router>
+    <HistoryRouter 
+      history={history}
+      future={routerConfig.future}
+    >
       <ThemeProvider>
         <AuthProvider>
           <Routes>
@@ -173,7 +187,7 @@ function App() {
           </Routes>
         </AuthProvider>
       </ThemeProvider>
-    </Router>
+    </HistoryRouter>
   );
 }
 

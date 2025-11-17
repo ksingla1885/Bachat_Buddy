@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -8,19 +8,45 @@ function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   
   const { register, handleSubmit, formState: { errors } } = useForm();
 
   const onSubmit = async (data) => {
+    console.log('Login form submitted');
     try {
       setError('');
       setIsLoading(true);
-      await login(data.email, data.password);
-      navigate('/dashboard');
+      console.log('Calling login function...');
+      
+      const user = await login(data.email, data.password);
+      console.log('Login function returned, user:', user);
+      
+      if (user) {
+        // Clear any cached data
+        window.history.replaceState({}, document.title);
+        
+        // Get the redirect path or default to dashboard
+        const from = location.state?.from?.pathname || '/dashboard';
+        console.log('Login successful, navigating to:', from);
+        
+        // Force a hard navigation to ensure the page reloads
+        window.location.href = from;
+      } else {
+        console.log('Login failed: No user returned');
+        toast.error('Login failed. Please try again.');
+      }
     } catch (error) {
-      setError('Failed to log in. Please check your credentials.');
-      console.error('Login error:', error);
+      console.error('Error in onSubmit:', error);
+      // Error is already handled in the login function
+      if (!error.response) {
+        const errorMsg = 'Network error. Please check your connection.';
+        console.error(errorMsg);
+        setError(errorMsg);
+        toast.error(errorMsg);
+      }
     } finally {
+      console.log('Login process completed');
       setIsLoading(false);
     }
   };

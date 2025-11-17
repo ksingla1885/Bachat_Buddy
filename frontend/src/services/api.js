@@ -1,32 +1,66 @@
 import axios from "axios";
+import { toast } from 'react-hot-toast';
+import { useNavigate } from 'react-router-dom';
 
-// ✅ Create axios instance
+// Create axios instance
 const api = axios.create({
-  // Default to backend port 5001 (matches backend/server.js). If you use a different port
-  // set VITE_API_URL in the frontend environment (.env) to override.
   baseURL: import.meta.env.VITE_API_URL || "http://localhost:5001/api",
   headers: {
     "Content-Type": "application/json",
-  },
+  }
 });
 
-// ✅ Request interceptor → attach token if available
+// Request interceptor → attach token if available
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
+}, (error) => {
+  return Promise.reject(error);
 });
 
-// ✅ Response interceptor (global error handling)
+// Response interceptor (global error handling)
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status >= 500) {
-      console.error("Server error:", error.response.data);
+    // Handle 401 Unauthorized errors
+    if (error.response?.status === 401) {
+      // Clear token and redirect to login
+      localStorage.removeItem('token');
+      // Only redirect if not already on login/signup page
+      if (!['/login', '/signup', '/'].includes(window.location.pathname)) {
+        window.location.href = '/login';
+      }
     }
-    // Don't auto-redirect on 401 - let components handle auth errors
+    // Handle network errors
+    if (!error.response) {
+      toast.error('Network error. Please check your connection.');
+      return Promise.reject(error);
+    }
+
+    const { status } = error.response;
+    
+    // Handle 401 Unauthorized
+    if (status === 401) {
+      // Clear auth data
+      localStorage.removeItem('token');
+      delete api.defaults.headers.common['Authorization'];
+      
+      // Only redirect if not already on login/signup pages
+      if (!['/login', '/signup', '/'].includes(window.location.pathname)) {
+        toast.error('Your session has expired. Please log in again.');
+        window.location.href = '/login';
+      }
+    }
+    // Handle 5xx server errors
+    else if (status >= 500) {
+      console.error('Server error:', error.response.data);
+      toast.error('Server error. Please try again later.');
+    }
+    
+    // For other errors, just reject with the error
     return Promise.reject(error);
   }
 );

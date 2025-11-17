@@ -234,8 +234,8 @@ function Landing() {
       photo: '/images/team/mohit.jpeg',
       skills: ['React', 'Tailwind CSS', 'UI/UX Design', 'Responsive Design'],
       description: 'Specialized in creating beautiful and intuitive user interfaces with modern design principles.',
-      github: 'https://github.com/teammember2',
-      linkedin: 'https://linkedin.com/in/teammember2'
+      github: 'https://github.com/mohityadav72065',
+      linkedin: 'https://www.linkedin.com/in/mohit-yadav-948829398/'
     },
     {
       name: 'Mayank Singla',
