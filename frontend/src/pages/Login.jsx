@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { useAuth } from '../contexts/AuthContext';
+import { toast } from 'react-hot-toast';
+import api from '../services/api';
 
 function Login() {
   const [error, setError] = useState('');
@@ -9,44 +11,68 @@ function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  
+  const [showOtpModal, setShowOtpModal] = useState(false);
+  const [otp, setOtp] = useState('');
+  const [otpError, setOtpError] = useState('');
+  const [pending2FAEmail, setPending2FAEmail] = useState('');
+
   const { register, handleSubmit, formState: { errors } } = useForm();
 
   const onSubmit = async (data) => {
-    console.log('Login form submitted');
+    setError('');
+    setIsLoading(true);
+    setOtpError('');
+    setShowOtpModal(false);
+    setPending2FAEmail('');
     try {
-      setError('');
-      setIsLoading(true);
-      console.log('Calling login function...');
-      
-      const user = await login(data.email, data.password);
-      console.log('Login function returned, user:', user);
-      
-      if (user) {
-        // Clear any cached data
+      const result = await login(data.email, data.password);
+      if (result && result.require2FA) {
+        setPending2FAEmail(data.email);
+        setShowOtpModal(true);
+        toast.success('OTP sent to your email.');
+        return;
+      }
+      if (result) {
         window.history.replaceState({}, document.title);
-        
-        // Get the redirect path or default to dashboard
         const from = location.state?.from?.pathname || '/dashboard';
-        console.log('Login successful, navigating to:', from);
-        
-        // Force a hard navigation to ensure the page reloads
         window.location.href = from;
       } else {
-        console.log('Login failed: No user returned');
         toast.error('Login failed. Please try again.');
       }
     } catch (error) {
-      console.error('Error in onSubmit:', error);
-      // Error is already handled in the login function
       if (!error.response) {
         const errorMsg = 'Network error. Please check your connection.';
-        console.error(errorMsg);
         setError(errorMsg);
         toast.error(errorMsg);
       }
     } finally {
-      console.log('Login process completed');
+      setIsLoading(false);
+    }
+  };
+
+  // Handle OTP submit
+  const handleOtpSubmit = async (e) => {
+    e.preventDefault();
+    setOtpError('');
+    if (!otp || !pending2FAEmail) return;
+    try {
+      setIsLoading(true);
+      const response = await api.post('/auth/login-2fa', { email: pending2FAEmail, otp });
+      if (response.data?.data?.token && response.data?.data?.user) {
+        // Store token and set auth header
+        localStorage.setItem('token', response.data.data.token);
+        api.defaults.headers.common['Authorization'] = `Bearer ${response.data.data.token}`;
+        toast.success('2FA verification successful!');
+        setShowOtpModal(false);
+        window.history.replaceState({}, document.title);
+        const from = location.state?.from?.pathname || '/dashboard';
+        window.location.href = from;
+      } else {
+        setOtpError('Invalid response from server.');
+      }
+    } catch (error) {
+      setOtpError(error.response?.data?.message || 'Invalid OTP. Please try again.');
+    } finally {
       setIsLoading(false);
     }
   };
@@ -70,7 +96,6 @@ function Login() {
               Sign in to manage your finances
             </p>
           </div>
-          
           <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
             {error && (
               <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 animate-fadeInUp">
@@ -82,7 +107,6 @@ function Login() {
                 </div>
               </div>
             )}
-            
             <div className="space-y-4">
               <div>
                 <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -110,7 +134,6 @@ function Login() {
                   </p>
                 )}
               </div>
-              
               <div>
                 <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Password
@@ -138,7 +161,6 @@ function Login() {
                 )}
               </div>
             </div>
-
             <button
               type="submit"
               disabled={isLoading}
@@ -158,7 +180,6 @@ function Login() {
                 </>
               )}
             </button>
-
             {/* Sign Up Link */}
             <div className="text-center">
               <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -170,6 +191,53 @@ function Login() {
             </div>
           </form>
         </div>
+        {/* OTP Modal */}
+        {showOtpModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Enter OTP</h3>
+                <button
+                  onClick={() => setShowOtpModal(false)}
+                  className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
+                >
+                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              <form onSubmit={handleOtpSubmit} className="space-y-4">
+                <p className="text-gray-700 dark:text-gray-300">An OTP has been sent to your email. Please enter it below to continue.</p>
+                <input
+                  type="text"
+                  value={otp}
+                  onChange={e => setOtp(e.target.value)}
+                  className={`input-modern w-full ${otpError ? 'border-red-500' : ''}`}
+                  placeholder="Enter OTP"
+                  maxLength={6}
+                />
+                {otpError && <p className="text-red-500 text-sm mt-1">{otpError}</p>}
+                <div className="flex space-x-3 mt-6">
+                  <button
+                    type="submit"
+                    disabled={isLoading || !otp}
+                    className={`flex-1 btn-primary ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  >
+                    {isLoading ? 'Verifying...' : 'Verify'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowOtpModal(false)}
+                    disabled={isLoading}
+                    className="flex-1 btn-secondary"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

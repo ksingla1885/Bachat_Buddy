@@ -23,7 +23,7 @@ const TABS = [
   { id: 'overview', label: 'Overview', icon: User },
   { id: 'settings', label: 'Settings', icon: Settings },
   { id: 'security', label: 'Security', icon: Shield },
-  { id: 'preferences', label: 'Preferences', icon: Palette }
+  // Preferences tab removed
 ];
 
 // Form field configuration
@@ -53,6 +53,56 @@ const Profile = () => {
   });
   const [passwordErrors, setPasswordErrors] = useState({});
   const [isChangingPassword, setIsChangingPassword] = useState(false);
+  // 2FA states
+  const [show2FAModal, setShow2FAModal] = useState(false);
+  const [otp, setOtp] = useState('');
+  const [otpError, setOtpError] = useState('');
+  const [isSendingOtp, setIsSendingOtp] = useState(false);
+  const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
+  const [is2FAEnabled, setIs2FAEnabled] = useState(false);
+  // Fetch 2FA status on mount
+  useEffect(() => {
+    const fetch2FAStatus = async () => {
+      try {
+        const res = await api.get('/auth/2fa/status');
+        setIs2FAEnabled(res.data.is2FAEnabled);
+      } catch (e) {
+        setIs2FAEnabled(false);
+      }
+    };
+    fetch2FAStatus();
+  }, [refreshTrigger]);
+  // Handle 2FA Enable button click
+  const handleEnable2FA = async () => {
+    setIsSendingOtp(true);
+    setOtp('');
+    setOtpError('');
+    try {
+      await api.post('/auth/2fa/send-otp');
+      setShow2FAModal(true);
+    } catch (e) {
+      setOtpError('Failed to send OTP. Please try again.');
+    } finally {
+      setIsSendingOtp(false);
+    }
+  };
+
+  // Handle OTP verification
+  const handleVerifyOtp = async () => {
+    setIsVerifyingOtp(true);
+    setOtpError('');
+    try {
+      await api.post('/auth/2fa/verify-otp', { otp });
+      setShow2FAModal(false);
+      setIs2FAEnabled(true);
+      setRefreshTrigger(prev => prev + 1);
+      alert('Two-factor authentication enabled!');
+    } catch (e) {
+      setOtpError(e.response?.data?.message || 'Invalid OTP. Please try again.');
+    } finally {
+      setIsVerifyingOtp(false);
+    }
+  };
 
   // Initialize form data when user loads
   useEffect(() => {
@@ -441,33 +491,67 @@ const Profile = () => {
                         <p className="text-sm text-gray-600 dark:text-gray-400">Add an extra layer of security</p>
                       </div>
                     </div>
-                    <button className="btn-secondary">Enable</button>
+                    {is2FAEnabled ? (
+                      <span className="text-green-600 font-semibold">Enabled</span>
+                    ) : (
+                      <button
+                        className={`btn-secondary ${isSendingOtp ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        onClick={handleEnable2FA}
+                        disabled={isSendingOtp}
+                      >
+                        {isSendingOtp ? 'Sending OTP...' : 'Enable'}
+                      </button>
+                    )}
                   </div>
+                      {/* 2FA OTP Modal */}
+                      {show2FAModal && (
+                        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6">
+                            <div className="flex items-center justify-between mb-6">
+                              <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Enter OTP</h3>
+                              <button
+                                onClick={() => setShow2FAModal(false)}
+                                className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
+                              >
+                                <X className="w-6 h-6" />
+                              </button>
+                            </div>
+                            <div className="space-y-4">
+                              <p className="text-gray-700 dark:text-gray-300">An OTP has been sent to your email. Please enter it below to enable 2FA.</p>
+                              <input
+                                type="text"
+                                value={otp}
+                                onChange={e => setOtp(e.target.value)}
+                                className={`input-modern w-full ${otpError ? 'border-red-500' : ''}`}
+                                placeholder="Enter OTP"
+                                maxLength={6}
+                              />
+                              {otpError && <p className="text-red-500 text-sm mt-1">{otpError}</p>}
+                            </div>
+                            <div className="flex space-x-3 mt-6">
+                              <button
+                                onClick={handleVerifyOtp}
+                                disabled={isVerifyingOtp || !otp}
+                                className={`flex-1 btn-primary ${isVerifyingOtp ? 'opacity-50 cursor-not-allowed' : ''}`}
+                              >
+                                {isVerifyingOtp ? 'Verifying...' : 'Verify'}
+                              </button>
+                              <button
+                                onClick={() => setShow2FAModal(false)}
+                                disabled={isVerifyingOtp}
+                                className="flex-1 btn-secondary"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                 </div>
               </div>
             )}
 
-            {/* Preferences Tab */}
-            {activeTab === 'preferences' && (
-              <div className="card-modern p-6">
-                <h3 className="text-xl font-semibold mb-6 text-gray-900 dark:text-white">Preferences</h3>
-                <div className="space-y-6">
-                  <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                    <div className="flex items-center space-x-3">
-                      <Palette className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-                      <div>
-                        <p className="font-medium text-gray-900 dark:text-white">Dark Mode</p>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">Toggle between light and dark themes</p>
-                      </div>
-                    </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input type="checkbox" className="sr-only peer" />
-                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
-                    </label>
-                  </div>
-                </div>
-              </div>
-            )}
+            {/* Preferences Tab removed */}
           </div>
         </div>
       </div>

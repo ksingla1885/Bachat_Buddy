@@ -128,19 +128,25 @@ export function AuthProvider({ children }) {
       const response = await api.post('/auth/login', { email, password });
       console.log('Login response:', response.data);
       
+      // Handle 2FA required response
+      if (response.data?.status === 'require-2fa') {
+        // Return special value to indicate 2FA is required
+        return { require2FA: true, email };
+      }
+
       if (!response.data?.data?.token || !response.data?.data?.user) {
         console.error('Invalid response format:', response.data);
         throw new Error('Invalid response from server');
       }
-      
+
       const { token, user } = response.data.data;
       console.log('Login successful, user:', user);
-      
+
       // Store token and set auth header
       console.log('Setting token in localStorage and axios headers');
       localStorage.setItem('token', token);
       api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-      
+
       // Update user state
       console.log('Updating user state');
       await new Promise(resolve => {
@@ -148,10 +154,10 @@ export function AuthProvider({ children }) {
         setError(null);
         resolve();
       });
-      
+
       // Show welcome message
       toast.success(`Welcome back, ${user.name || 'User'}!`);
-      
+
       // Return the user data and let the component handle navigation
       console.log('Login process completed, returning user');
       return user;

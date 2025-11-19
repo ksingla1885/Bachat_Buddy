@@ -17,6 +17,7 @@ const goalRoutes = require('./routes/goalRoutes');
 const reportRoutes = require('./routes/reportRoutes');
 const userRoutes = require('./routes/userRoutes');
 const monthlySavingsTierRoutes = require('./routes/monthlySavingsTierRoutes');
+const debugRoutes = require('./routes/debugRoutes');
 
 // Create Express app
 const app = express();
@@ -47,6 +48,8 @@ app.use('/api/goals', goalRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/monthly-tiers', monthlySavingsTierRoutes);
+// Development debug routes (test email sending)
+app.use('/api/debug', debugRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

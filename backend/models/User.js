@@ -56,7 +56,19 @@ const userSchema = new mongoose.Schema({
     default: []
   },
   resetToken: String,
-  resetTokenExpiry: Date
+  resetTokenExpiry: Date,
+  // 2FA fields
+  is2FAEnabled: {
+    type: Boolean,
+    default: false
+  },
+  twoFAType: {
+    type: String,
+    enum: ['email'],
+    default: 'email'
+  },
+  twoFAOTP: String,
+  twoFAOTPExpiry: Date
 }, { timestamps: true });
 
 module.exports = mongoose.model('User', userSchema);

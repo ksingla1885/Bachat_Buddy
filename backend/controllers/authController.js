@@ -1,7 +1,65 @@
+const { sendWelcomeEmail, send2FAOtpEmail } = require('../utils/emailService');
+// Send 2FA OTP to user's email
+exports.send2FAOtp = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ status: 'error', message: 'User not found' });
+
+    // Generate 6-digit OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+    user.twoFAOTP = otp;
+    user.twoFAOTPExpiry = expiry;
+    await user.save();
+
+    await send2FAOtpEmail(user.email, { name: user.name, otp });
+    res.json({ status: 'success', message: 'OTP sent to your email.' });
+  } catch (error) {
+    res.status(500).json({ status: 'error', message: 'Failed to send OTP', error: error.message });
+  }
+};
+
+// Verify 2FA OTP and enable 2FA
+exports.verify2FAOtp = async (req, res) => {
+  try {
+    const { otp } = req.body;
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ status: 'error', message: 'User not found' });
+
+    if (!user.twoFAOTP || !user.twoFAOTPExpiry || user.twoFAOTPExpiry < new Date()) {
+      return res.status(400).json({ status: 'error', message: 'OTP expired or not requested' });
+    }
+    if (user.twoFAOTP !== otp) {
+      return res.status(400).json({ status: 'error', message: 'Invalid OTP' });
+    }
+
+    user.is2FAEnabled = true;
+    user.twoFAOTP = undefined;
+    user.twoFAOTPExpiry = undefined;
+    await user.save();
+    res.json({ status: 'success', message: 'Two-factor authentication enabled.' });
+  } catch (error) {
+    res.status(500).json({ status: 'error', message: 'Failed to verify OTP', error: error.message });
+  }
+};
+
+// Get 2FA status
+exports.get2FAStatus = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ status: 'error', message: 'User not found' });
+    res.json({ status: 'success', is2FAEnabled: !!user.is2FAEnabled });
+  } catch (error) {
+    res.status(500).json({ status: 'error', message: 'Failed to get 2FA status', error: error.message });
+  }
+};
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const { JWT_SECRET, JWT_EXPIRES_IN } = require('../config/jwt');
+// const { sendWelcomeEmail } = require('../utils/emailService');
+const logger = require('../utils/logger');
 
 // Helper function to generate JWT token
 const generateToken = (userId) => {
@@ -28,11 +86,24 @@ exports.signup = async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const passwordHash = await bcrypt.hash(password, salt);
 
+    // Store the plain password for the welcome email
+    const plainPassword = password;
+    
     // Create new user
     const user = await User.create({
       name,
       email,
       passwordHash
+    });
+
+    // Send welcome email with credentials (don't await to avoid blocking the response)
+    sendWelcomeEmail(email, {
+      name,
+      email,
+      password: plainPassword
+    }).catch(error => {
+      logger.error('Failed to send welcome email:', error);
+      // Don't fail the signup process if email sending fails
     });
 
     // Generate JWT token
@@ -81,9 +152,24 @@ exports.login = async (req, res) => {
       });
     }
 
-    // Generate JWT token
-    const token = generateToken(user._id);
+    // If 2FA is enabled, send OTP and require verification
+    if (user.is2FAEnabled) {
+      // Generate OTP and expiry
+      const otp = Math.floor(100000 + Math.random() * 900000).toString();
+      const expiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+      user.twoFAOTP = otp;
+      user.twoFAOTPExpiry = expiry;
+      await user.save();
+      await send2FAOtpEmail(user.email, { name: user.name, otp });
+      return res.status(200).json({
+        status: 'require-2fa',
+        message: '2FA enabled. OTP sent to email.',
+        data: { user: { id: user._id, name: user.name, email: user.email } }
+      });
+    }
 
+    // If 2FA not enabled, proceed as normal
+    const token = generateToken(user._id);
     res.status(200).json({
       status: 'success',
       data: {
@@ -101,6 +187,40 @@ exports.login = async (req, res) => {
       message: 'Error logging in',
       error: error.message
     });
+  }
+};
+
+// Verify 2FA OTP at login and return JWT
+exports.login2FAVerify = async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+    const user = await User.findOne({ email });
+    if (!user) return res.status(401).json({ status: 'error', message: 'Invalid credentials' });
+    if (!user.is2FAEnabled) return res.status(400).json({ status: 'error', message: '2FA not enabled for this user' });
+    if (!user.twoFAOTP || !user.twoFAOTPExpiry || user.twoFAOTPExpiry < new Date()) {
+      return res.status(400).json({ status: 'error', message: 'OTP expired or not requested' });
+    }
+    if (user.twoFAOTP !== otp) {
+      return res.status(400).json({ status: 'error', message: 'Invalid OTP' });
+    }
+    // OTP valid, clear OTP fields and return JWT
+    user.twoFAOTP = undefined;
+    user.twoFAOTPExpiry = undefined;
+    await user.save();
+    const token = generateToken(user._id);
+    res.status(200).json({
+      status: 'success',
+      data: {
+        user: {
+          id: user._id,
+          name: user.name,
+          email: user.email
+        },
+        token
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ status: 'error', message: '2FA verification failed', error: error.message });
   }
 };
 
