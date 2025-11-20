@@ -165,7 +165,8 @@ const Profile = () => {
       setIsSaving(true);
       const updatedUserData = await updateUser({
         ...editedUser,
-        budgetAlertEnabled
+        budgetAlertEnabled,
+        emailNotificationsEnabled
       });
 
       setEditedUser({
@@ -176,6 +177,7 @@ const Profile = () => {
         bio: updatedUserData.bio || ''
       });
       setBudgetAlertEnabled(updatedUserData.budgetAlertEnabled ?? true);
+      setEmailNotificationsEnabled(updatedUserData.emailNotificationsEnabled ?? true);
       setIsEditing(false);
       setRefreshTrigger(prev => prev + 1);
     } catch (error) {

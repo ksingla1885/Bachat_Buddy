@@ -1,10 +1,12 @@
-
-
 const express = require('express');
 const router = express.Router();
 const authController = require('../controllers/authController');
 const { protect } = require('../utils/authMiddleware');
 const { sendTestEmail } = require('../utils/emailService');
+
+// Signup with OTP verification
+router.post('/signup/request-otp', authController.signupRequestOtp);
+router.post('/signup/verify-otp', authController.signupVerifyOtp);
 
 // 2FA login verification endpoint
 router.post('/login-2fa', authController.login2FAVerify);

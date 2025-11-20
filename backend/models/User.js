@@ -16,58 +16,25 @@ const userSchema = new mongoose.Schema({
   },
   passwordHash: {
     type: String,
-    required: false // Not required for Google OAuth users
-  },
-  googleId: { 
-    type: String, 
-    unique: true, 
-    sparse: true // Allows multiple null values for googleId
+    required: false // Not required for OTP step
   },
   phone: {
     type: String,
-    trim: true,
-    default: ''
+    default: null,
+    trim: true
   },
   location: {
     type: String,
-    trim: true,
-    default: ''
+    default: null,
+    trim: true
   },
   bio: {
     type: String,
-    trim: true,
-    default: ''
+    default: null,
+    trim: true
   },
-  createdAt: {
-    type: Date,
-    default: Date.now
-  },
-  points: {
-    type: Number,
-    default: 0,
-    min: 0
-  },
-  firstBudgetDate: {
-    type: Date,
-    default: null
-  },
-  budgetComplianceMonths: {
-    type: [Date],
-    default: []
-  },
-  resetToken: String,
-  resetTokenExpiry: Date,
-  // Email notification preference
-  emailNotificationsEnabled: {
-    type: Boolean,
-    default: true
-  },
-  // Budget alert preference
-  budgetAlertEnabled: {
-    type: Boolean,
-    default: true
-  },
-  // 2FA fields
+  signupOTP: String,
+  signupOTPExpiry: Date,
   is2FAEnabled: {
     type: Boolean,
     default: false
@@ -78,7 +45,15 @@ const userSchema = new mongoose.Schema({
     default: 'email'
   },
   twoFAOTP: String,
-  twoFAOTPExpiry: Date
+  twoFAOTPExpiry: Date,
+  budgetAlertEnabled: {
+    type: Boolean,
+    default: true
+  },
+  emailNotificationsEnabled: {
+    type: Boolean,
+    default: true
+  }
 }, { timestamps: true });
 
 module.exports = mongoose.model('User', userSchema);
