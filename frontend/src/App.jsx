@@ -14,6 +14,7 @@ import Budgets from './pages/Budgets';
 import DebtTracker from './pages/DebtTracker';
 import Goals from './pages/Goals';
 import Achievements from './pages/Achievements';
+import Leaderboard from './pages/Leaderboard';
 import Reports from './pages/Reports';
 import Profile from './pages/Profile';
 
@@ -170,6 +171,16 @@ function App() {
                 <ProtectedRoute>
                   <AppLayout showNavbar={true} showContainer={true}>
                     <Achievements />
+                  </AppLayout>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/leaderboard" 
+              element={
+                <ProtectedRoute>
+                  <AppLayout showNavbar={true} showContainer={true}>
+                    <Leaderboard />
                   </AppLayout>
                 </ProtectedRoute>
               } 

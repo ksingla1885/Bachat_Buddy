@@ -5,6 +5,7 @@ const Budget = require('../models/Budget');
 const Goal = require('../models/Goal');
 const Debt = require('../models/Debt');
 const mongoose = require('mongoose');
+const LeaderboardService = require('../services/leaderboardService');
 
 // ================================
 // Get User Points
@@ -119,6 +120,9 @@ exports.awardBudgetPoints = async (userId, budgetId) => {
         relatedModel: 'Budget'
       });
 
+      // Update leaderboard
+      await LeaderboardService.updateUser(userId, pointsEarned, 'budget_under_limit');
+
       console.log(`Awarded ${pointsEarned} points to user ${userId} for budget management`);
     }
   } catch (error) {
@@ -144,13 +148,15 @@ exports.awardGoalCompletionPoints = async (userId, goalId) => {
 
       await PointsLog.create({
         userId,
-        points: goalId,
         points: pointsEarned,
         reason: 'goal_completed',
         description: `Earned ${pointsEarned} bonus points for completing goal: ${goal.title}`,
         relatedId: goalId,
         relatedModel: 'Goal'
       });
+
+      // Update leaderboard
+      await LeaderboardService.updateUser(userId, pointsEarned, 'goal_completed');
 
       console.log(`Awarded ${pointsEarned} points to user ${userId} for goal completion`);
     }
@@ -227,6 +233,9 @@ exports.awardMonthlySavingsPoints = async (userId, date = new Date()) => {
         relatedModel: 'Transaction'
       });
 
+      // Update leaderboard
+      await LeaderboardService.updateUser(userId, pointsEarned, 'monthly_savings');
+
       console.log(`Awarded ${pointsEarned} points to user ${userId} for monthly savings`);
       return { success: true, pointsEarned, savings };
     }
@@ -263,6 +272,9 @@ exports.awardDebtPaymentPoints = async (userId, debtId, paymentAmount) => {
         relatedId: debtId,
         relatedModel: 'Debt'
       });
+
+      // Update leaderboard
+      await LeaderboardService.updateUser(userId, pointsEarned, 'debt_paid_off');
 
       console.log(`Awarded ${pointsEarned} points to user ${userId} for debt payment`);
     }

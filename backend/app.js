@@ -19,6 +19,9 @@ const userRoutes = require('./routes/userRoutes');
 const monthlySavingsTierRoutes = require('./routes/monthlySavingsTierRoutes');
 const debugRoutes = require('./routes/debugRoutes');
 
+// Leaderboard routes
+const leaderboardRoutes = require('./routes/leaderboardRoutes');
+
 // Create Express app
 const app = express();
 
@@ -48,6 +51,8 @@ app.use('/api/goals', goalRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/monthly-tiers', monthlySavingsTierRoutes);
+// Leaderboard routes
+app.use('/api/leaderboard', leaderboardRoutes);
 // Development debug routes (test email sending)
 app.use('/api/debug', debugRoutes);
 

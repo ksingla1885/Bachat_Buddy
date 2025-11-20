@@ -80,6 +80,7 @@ mongoose
 // Cron Jobs (Recurring Transactions, etc.)
 // ========================
 require("./cronJobs/recurringTransactions");
+require("./cronJobs/leaderboardReset")();
 
 // ========================
 // Start Server

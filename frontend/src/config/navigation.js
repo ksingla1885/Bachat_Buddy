@@ -19,7 +19,8 @@ export const navigationItems = [
     type: 'dropdown',
     children: [
       { path: '/goals', name: 'Goals', icon: 'Target' },
-      { path: '/achievements', name: 'Points', icon: 'Medal' }
+      { path: '/achievements', name: 'Points', icon: 'Medal' },
+      { path: '/leaderboard', name: 'Leaderboard', icon: 'Crown' }
     ]
   }
 ];
