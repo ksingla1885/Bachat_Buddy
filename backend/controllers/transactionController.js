@@ -81,6 +81,54 @@ exports.createTransaction = async (req, res) => {
     userController.awardMonthlySavingsPoints(req.user.id, new Date(transaction.date))
       .catch(error => console.error('Error calculating monthly savings points:', error));
 
+
+    // === Budget Alert Logic ===
+    if (type === 'Expense' && category) {
+      // Find the relevant budget for this user, category, month, and year
+      const txnDate = new Date(transaction.date);
+      const month = txnDate.getMonth() + 1;
+      const year = txnDate.getFullYear();
+      const budget = await Budget.findOne({
+        userId: req.user.id,
+        category,
+        month,
+        year
+      });
+      if (budget) {
+        // Update spent amount
+        budget.spent = (budget.spent || 0) + numericAmount;
+        const percentUsed = (budget.spent / budget.amount) * 100;
+        let alertSent = false;
+        // Fetch user to check alert preference
+        const user = await mongoose.model('User').findById(req.user.id);
+        if (user.budgetAlertEnabled) {
+          // 80% alert
+          if (!budget.alert80Sent && percentUsed >= 80 && percentUsed < 100) {
+            await emailService.sendBudgetAlert(user.email, {
+              category,
+              budgetAmount: budget.amount,
+              spentAmount: budget.spent,
+              threshold: 80
+            });
+            budget.alert80Sent = true;
+            alertSent = true;
+          }
+          // 100% alert
+          if (!budget.alert100Sent && percentUsed >= 100) {
+            await emailService.sendBudgetAlert(user.email, {
+              category,
+              budgetAmount: budget.amount,
+              spentAmount: budget.spent,
+              threshold: 100
+            });
+            budget.alert100Sent = true;
+            alertSent = true;
+          }
+        }
+        if (alertSent) await budget.save();
+      }
+    }
+
     res.status(201).json({
       status: 'success',
       data: { transaction }

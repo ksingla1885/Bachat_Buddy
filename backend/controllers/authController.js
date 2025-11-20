@@ -305,7 +305,7 @@ exports.changePassword = async (req, res) => {
 // Update user profile
 exports.updateProfile = async (req, res) => {
   try {
-    const { name, email, phone, location, bio } = req.body;
+    const { name, email, phone, location, bio, budgetAlertEnabled, emailNotificationsEnabled } = req.body;
 
     // Check if email is being changed and if it already exists
     if (email && email !== req.user.email) {
@@ -326,7 +326,9 @@ exports.updateProfile = async (req, res) => {
         ...(email && { email }),
         ...(phone && { phone }),
         ...(location && { location }),
-        ...(bio !== undefined && { bio })
+        ...(bio !== undefined && { bio }),
+        ...(budgetAlertEnabled !== undefined && { budgetAlertEnabled }),
+        ...(emailNotificationsEnabled !== undefined && { emailNotificationsEnabled })
       },
       { new: true, runValidators: true }
     ).select('-passwordHash');

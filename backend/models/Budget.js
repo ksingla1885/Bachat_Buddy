@@ -36,6 +36,15 @@ const budgetSchema = new mongoose.Schema({
     default: 0,
     min: 0
   }
+  ,
+  alert80Sent: {
+    type: Boolean,
+    default: false
+  },
+  alert100Sent: {
+    type: Boolean,
+    default: false
+  }
 }, { timestamps: true });
 
 // ===============================

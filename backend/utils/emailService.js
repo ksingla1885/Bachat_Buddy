@@ -272,70 +272,11 @@ exports.sendMonthlySummary = async (userEmail, summaryData) => {
     }
 
     const { month, year, categories } = summaryData;
-    
-    let categoriesHtml = categories
-      .map(cat => `
-        <tr>
-          <td>${cat.name}</td>
-          <td>₹${cat.budget}</td>
-          <td>₹${cat.spent}</td>
-          <td>${cat.percentage}%</td>
-        </tr>
-      `)
-      .join('');
-
-    const emailContent = {
-      from: `"${FROM_NAME}" <${FROM_EMAIL}>`,
-      to: userEmail,
-      subject: `Monthly Budget Summary - ${month}/${year}`,
-      html: `
-        <h2>Monthly Budget Summary</h2>
-        <p>Here's your spending summary for ${month}/${year}:</p>
-        <table style="width:100%; border-collapse: collapse;">
-          <tr>
-            <th style="text-align: left;">Category</th>
-            <th style="text-align: left;">Budget</th>
-            <th style="text-align: left;">Spent</th>
-            <th style="text-align: left;">% Used</th>
-          </tr>
-          ${categoriesHtml}
-        </table>
-        <p>Keep tracking your expenses with BachatBuddy!</p>
-        <p>Best regards,<br>BachatBuddy Team</p>
-      `
-    };
-
-    await mailer.sendMail(emailContent);
-    return true;
+    return false;
   } catch (error) {
-    logger.error('Error sending monthly summary email:', error.message);
+    logger.error('Error sending monthly summary:', error.message);
     return false;
   }
 };
 
-// Send a simple test email (useful for debugging SMTP config)
-exports.sendTestEmail = async (toEmail) => {
-  try {
-    // Ensure transporter is initialized
-    const mailer = transporter || (await transporterPromise);
-    if (!mailer) {
-      return { ok: false, error: 'Email transporter not initialized' };
-    }
 
-    const target = toEmail || process.env.SMTP_USER || process.env.EMAIL_USER;
-    const emailContent = {
-      from: `"${FROM_NAME}" <${FROM_EMAIL}>`,
-      to: target,
-      subject: 'BachatBuddy — SMTP Test Message',
-      text: `This is a test message from BachatBuddy. If you received this, SMTP configuration is working for ${target}.`
-    };
-
-    const info = await mailer.sendMail(emailContent);
-    const preview = nodemailer.getTestMessageUrl(info) || null;
-    logger.info(`Test email sent to ${target} - messageId: ${info.messageId}` + (preview ? ` - preview: ${preview}` : ''));
-    return { ok: true, info, preview };
-  } catch (error) {
-    logger.error('Test email failed:', error.message);
-    return { ok: false, error: error.message };
-  }
-};

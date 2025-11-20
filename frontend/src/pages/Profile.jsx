@@ -60,6 +60,24 @@ const Profile = () => {
   const [isSendingOtp, setIsSendingOtp] = useState(false);
   const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
   const [is2FAEnabled, setIs2FAEnabled] = useState(false);
+  // Notification toggles
+  const [budgetAlertEnabled, setBudgetAlertEnabled] = useState(user?.budgetAlertEnabled ?? true);
+  const [emailNotificationsEnabled, setEmailNotificationsEnabled] = useState(user?.emailNotificationsEnabled ?? true);
+
+  // Save notification toggle changes immediately
+  const handleToggleChange = async (field, value) => {
+    if (field === 'budgetAlertEnabled') setBudgetAlertEnabled(value);
+    if (field === 'emailNotificationsEnabled') setEmailNotificationsEnabled(value);
+    try {
+      await updateUser({
+        ...editedUser,
+        budgetAlertEnabled: field === 'budgetAlertEnabled' ? value : budgetAlertEnabled,
+        emailNotificationsEnabled: field === 'emailNotificationsEnabled' ? value : emailNotificationsEnabled
+      });
+    } catch (error) {
+      // Optionally show error toast
+    }
+  };
   // Fetch 2FA status on mount
   useEffect(() => {
     const fetch2FAStatus = async () => {
@@ -114,6 +132,8 @@ const Profile = () => {
         location: user.location || '',
         bio: user.bio || ''
       });
+      setBudgetAlertEnabled(user.budgetAlertEnabled ?? true);
+      setEmailNotificationsEnabled(user.emailNotificationsEnabled ?? true);
     }
   }, [user]);
 
@@ -143,7 +163,10 @@ const Profile = () => {
 
     try {
       setIsSaving(true);
-      const updatedUserData = await updateUser(editedUser);
+      const updatedUserData = await updateUser({
+        ...editedUser,
+        budgetAlertEnabled
+      });
 
       setEditedUser({
         name: updatedUserData.name || '',
@@ -152,7 +175,7 @@ const Profile = () => {
         location: updatedUserData.location || '',
         bio: updatedUserData.bio || ''
       });
-
+      setBudgetAlertEnabled(updatedUserData.budgetAlertEnabled ?? true);
       setIsEditing(false);
       setRefreshTrigger(prev => prev + 1);
     } catch (error) {
@@ -440,7 +463,12 @@ const Profile = () => {
                       </div>
                     </div>
                     <label className="relative inline-flex items-center cursor-pointer">
-                      <input type="checkbox" className="sr-only peer" defaultChecked />
+                      <input
+                        type="checkbox"
+                        className="sr-only peer"
+                        checked={emailNotificationsEnabled}
+                        onChange={e => handleToggleChange('emailNotificationsEnabled', e.target.checked)}
+                      />
                       <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
                     </label>
                   </div>
@@ -454,7 +482,12 @@ const Profile = () => {
                       </div>
                     </div>
                     <label className="relative inline-flex items-center cursor-pointer">
-                      <input type="checkbox" className="sr-only peer" defaultChecked />
+                      <input
+                        type="checkbox"
+                        className="sr-only peer"
+                        checked={budgetAlertEnabled}
+                        onChange={e => handleToggleChange('budgetAlertEnabled', e.target.checked)}
+                      />
                       <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
                     </label>
                   </div>

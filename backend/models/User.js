@@ -57,6 +57,16 @@ const userSchema = new mongoose.Schema({
   },
   resetToken: String,
   resetTokenExpiry: Date,
+  // Email notification preference
+  emailNotificationsEnabled: {
+    type: Boolean,
+    default: true
+  },
+  // Budget alert preference
+  budgetAlertEnabled: {
+    type: Boolean,
+    default: true
+  },
   // 2FA fields
   is2FAEnabled: {
     type: Boolean,
