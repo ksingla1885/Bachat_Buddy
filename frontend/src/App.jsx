@@ -17,6 +17,7 @@ import Achievements from './pages/Achievements';
 import Leaderboard from './pages/Leaderboard';
 import Reports from './pages/Reports';
 import Profile from './pages/Profile';
+import PointsInfoPage from './pages/PointsInfoPage';
 
 // Create a custom history object to access navigation outside components
 const history = createBrowserHistory({ window });
@@ -191,6 +192,16 @@ function App() {
                 <ProtectedRoute>
                   <AppLayout showNavbar={true} showContainer={true}>
                     <Profile />
+                  </AppLayout>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/points-info" 
+              element={
+                <ProtectedRoute>
+                  <AppLayout showNavbar={true} showContainer={true}>
+                    <PointsInfoPage />
                   </AppLayout>
                 </ProtectedRoute>
               } 

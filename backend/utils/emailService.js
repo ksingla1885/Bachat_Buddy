@@ -96,7 +96,7 @@ exports.send2FAOtpEmail = async (userEmail, { name, otp }) => {
       html: `
         <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f5f5f5; padding: 20px;">
           <div style="background: linear-gradient(135deg, #10b981, #059669); padding: 30px; text-align: center; border-radius: 10px 10px 0 0; color: white;">
-            <h1 style="margin: 0; font-size: 28px; font-weight: 600;">🔐 Two-Factor Authentication</h1>
+            <h1 style="margin: 0; font-size: 28px; font-weight: 600;">🔐 BachatBuddy-Your personal financial manager</h1>
           </div>
           <div style="background-color: white; padding: 30px; border-radius: 0 0 10px 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
             <p style="color: #333; font-size: 16px; margin-bottom: 20px;">Hello <strong>${name || 'there'}</strong>,</p>

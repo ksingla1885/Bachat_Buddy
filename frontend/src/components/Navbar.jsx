@@ -1,16 +1,18 @@
 import React, { useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import Logo from './Logo';
 import ThemeToggle from './ThemeToggle';
 import UserMenu from './UserMenu';
 import NavigationLinks from './NavigationLinks';
 import MobileMenu from './MobileMenu';
+import PointsInfoModal from './PointsInfoModal';
 import { useAuth } from '../contexts/AuthContext';
-import { Menu } from 'lucide-react';
+import { Menu, Info } from 'lucide-react';
 
 function Navbar() {
   const { user } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const isLandingPage = location.pathname === '/';
@@ -40,6 +42,16 @@ function Navbar() {
           {/* Right side controls */}
           <div className="flex items-center space-x-2 sm:space-x-3 flex-shrink-0">
             <ThemeToggle />
+            
+            {user && (
+              <button
+                onClick={() => navigate('/points-info')}
+                className="p-2 rounded-xl text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-300"
+                title="Points & Policies"
+              >
+                <Info className="h-5 w-5" />
+              </button>
+            )}
 
             <UserMenu />
 
@@ -62,6 +74,7 @@ function Navbar() {
             onClose={() => setIsMobileMenuOpen(false)}
           />
         )}
+        
       </div>
     </nav>
   );
