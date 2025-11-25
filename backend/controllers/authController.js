@@ -243,6 +243,10 @@ exports.login = async (req, res) => {
     }
 
     // If 2FA not enabled, proceed as normal
+    // Update lastLogin
+    user.lastLogin = new Date();
+    await user.save();
+    
     const token = generateToken(user._id);
     res.status(200).json({
       status: 'success',
@@ -280,6 +284,7 @@ exports.login2FAVerify = async (req, res) => {
     // OTP valid, clear OTP fields and return JWT
     user.twoFAOTP = undefined;
     user.twoFAOTPExpiry = undefined;
+    user.lastLogin = new Date();
     await user.save();
     const token = generateToken(user._id);
     res.status(200).json({

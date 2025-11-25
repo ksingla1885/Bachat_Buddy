@@ -448,3 +448,61 @@ exports.getAllUsersPoints = async (req, res) => {
     });
   }
 };
+
+// ================================
+// Get User Usage Statistics
+// ================================
+exports.getUserUsageStats = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    // Count total transactions
+    const totalTransactions = await Transaction.countDocuments({ userId });
+
+    // Count active budgets
+    const totalBudgets = await Budget.countDocuments({ userId });
+
+    // Count active debts (not paid off)
+    const totalDebts = await Debt.countDocuments({ 
+      userId, 
+      status: { $ne: 'paid' } 
+    });
+
+    // Count active goals (not completed)
+    const totalGoals = await Goal.countDocuments({ 
+      userId, 
+      status: { $ne: 'completed' } 
+    });
+
+    // Count total wallets
+    const Wallet = mongoose.model('Wallet');
+    const totalWallets = await Wallet.countDocuments({ userId });
+
+    // Get user creation date to calculate days active
+    const user = await User.findById(userId).select('createdAt lastLogin');
+    const daysActive = user ? Math.floor((Date.now() - new Date(user.createdAt)) / (1000 * 60 * 60 * 24)) : 0;
+
+    // Get last login date
+    const lastLoginDate = user?.lastLogin ? new Date(user.lastLogin) : new Date(user?.createdAt);
+
+    res.json({
+      status: 'success',
+      data: {
+        totalTransactions,
+        totalBudgets,
+        totalDebts,
+        totalGoals,
+        totalWallets,
+        daysActive,
+        lastLogin: lastLoginDate,
+        joinedDate: user?.createdAt
+      }
+    });
+  } catch (error) {
+    console.error('Get usage stats error:', error);
+    res.status(500).json({
+      status: 'error',
+      message: 'Failed to fetch usage statistics'
+    });
+  }
+};

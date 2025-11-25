@@ -11,6 +11,9 @@ router.get('/points', userController.getUserPoints);
 router.get('/points/history', userController.getPointsHistory);
 router.get('/achievements', userController.getUserAchievements);
 
+// Usage statistics route
+router.get('/usage-stats', userController.getUserUsageStats);
+
 // Future admin routes (commented out for now)
 // router.get('/admin/points', userController.getAllUsersPoints);
 

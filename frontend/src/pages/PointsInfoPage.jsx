@@ -1,9 +1,48 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
+import axios from 'axios';
+import { API_URL } from '../config';
 
 function PointsInfoPage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const [usageStats, setUsageStats] = useState({
+    totalTransactions: 0,
+    totalBudgets: 0,
+    totalDebts: 0,
+    totalGoals: 0,
+    totalWallets: 0,
+    daysActive: 0,
+    lastLogin: null,
+    joinedDate: null
+  });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchUsageStats = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const response = await axios.get(`${API_URL}/users/usage-stats`, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+        if (response.data.status === 'success') {
+          setUsageStats(response.data.data);
+        }
+      } catch (error) {
+        console.error('Error fetching usage stats:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (user) {
+      fetchUsageStats();
+    }
+  }, [user]);
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
@@ -18,9 +57,89 @@ function PointsInfoPage() {
 
         <div className="bg-white dark:bg-gray-800 shadow-xl rounded-xl overflow-hidden">
           <div className="px-6 py-8 sm:p-10">
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-8">Points System & Policies</h1>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-8">Points System, Policies & Analytics</h1>
             
             <div className="space-y-10">
+              {/* Usage Analytics Section - First */}
+              <div>
+                <h2 className="text-xl font-semibold text-blue-600 dark:text-blue-400 mb-4 pb-2 border-b border-gray-200 dark:border-gray-700">
+                  📊 Your Usage Analytics
+                </h2>
+                {loading ? (
+                  <div className="text-center py-8 text-gray-600 dark:text-gray-400">
+                    <p>Loading statistics...</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
+                      <p className="text-xs text-gray-600 dark:text-gray-400 mb-2">Days Active</p>
+                      <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">{usageStats.daysActive || 0}</p>
+                    </div>
+                    <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-4 border border-green-200 dark:border-green-800">
+                      <p className="text-xs text-gray-600 dark:text-gray-400 mb-2">Transactions</p>
+                      <p className="text-3xl font-bold text-green-600 dark:text-green-400">{usageStats.totalTransactions || 0}</p>
+                    </div>
+                    <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4 border border-purple-200 dark:border-purple-800">
+                      <p className="text-xs text-gray-600 dark:text-gray-400 mb-2">Active Budgets</p>
+                      <p className="text-3xl font-bold text-purple-600 dark:text-purple-400">{usageStats.totalBudgets || 0}</p>
+                    </div>
+                    <div className="bg-orange-50 dark:bg-orange-900/20 rounded-lg p-4 border border-orange-200 dark:border-orange-800">
+                      <p className="text-xs text-gray-600 dark:text-gray-400 mb-2">Active Debts</p>
+                      <p className="text-3xl font-bold text-orange-600 dark:text-orange-400">{usageStats.totalDebts || 0}</p>
+                    </div>
+                    <div className="bg-indigo-50 dark:bg-indigo-900/20 rounded-lg p-4 border border-indigo-200 dark:border-indigo-800">
+                      <p className="text-xs text-gray-600 dark:text-gray-400 mb-2">Savings Goals</p>
+                      <p className="text-3xl font-bold text-indigo-600 dark:text-indigo-400">{usageStats.totalGoals || 0}</p>
+                    </div>
+                    <div className="bg-cyan-50 dark:bg-cyan-900/20 rounded-lg p-4 border border-cyan-200 dark:border-cyan-800">
+                      <p className="text-xs text-gray-600 dark:text-gray-400 mb-2">Total Wallets</p>
+                      <p className="text-3xl font-bold text-cyan-600 dark:text-cyan-400">{usageStats.totalWallets || 0}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Website Usage Tips */}
+              <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-xl p-6 border border-blue-200 dark:border-blue-800">
+                <h2 className="text-xl font-semibold text-blue-600 dark:text-blue-400 mb-4">
+                  💡 Website Usage Tips
+                </h2>
+                <ul className="space-y-3 text-gray-700 dark:text-gray-300">
+                  <li className="flex items-start">
+                    <span className="text-blue-500 mr-3 mt-1">✓</span>
+                    <span><strong>Log in regularly</strong> to maintain your login streak and earn bonus points</span>
+                  </li>
+                  <li className="flex items-start">
+                    <span className="text-blue-500 mr-3 mt-1">✓</span>
+                    <span><strong>Track all transactions</strong> to get accurate spending insights and financial analytics</span>
+                  </li>
+                  <li className="flex items-start">
+                    <span className="text-blue-500 mr-3 mt-1">✓</span>
+                    <span><strong>Set and monitor budgets</strong> to stay on top of your spending habits</span>
+                  </li>
+                  <li className="flex items-start">
+                    <span className="text-blue-500 mr-3 mt-1">✓</span>
+                    <span><strong>Create savings goals</strong> to motivate yourself and track progress</span>
+                  </li>
+                  <li className="flex items-start">
+                    <span className="text-blue-500 mr-3 mt-1">✓</span>
+                    <span><strong>Review leaderboard ranking</strong> to see how you compare with other users</span>
+                  </li>
+                  <li className="flex items-start">
+                    <span className="text-blue-500 mr-3 mt-1">✓</span>
+                    <span><strong>Check monthly reports</strong> to understand your financial trends and patterns</span>
+                  </li>
+                  <li className="flex items-start">
+                    <span className="text-blue-500 mr-3 mt-1">✓</span>
+                    <span><strong>Use the wallet feature</strong> to organize and manage multiple accounts</span>
+                  </li>
+                  <li className="flex items-start">
+                    <span className="text-blue-500 mr-3 mt-1">✓</span>
+                    <span><strong>Enable recurring transactions</strong> for automated bill and savings tracking</span>
+                  </li>
+                </ul>
+              </div>
+
               <div>
                 <h2 className="text-xl font-semibold text-blue-600 dark:text-blue-400 mb-4 pb-2 border-b border-gray-200 dark:border-gray-700">
                   🎯 How to Earn Points
@@ -114,6 +233,38 @@ function PointsInfoPage() {
                   <li className="flex items-start">
                     <span className="text-yellow-500 mr-2">•</span>
                     We recommend exporting your debt history before deleting if you need to keep records
+                  </li>
+                </ul>
+              </div>
+
+              <div className="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-400 p-4 rounded-r">
+                <h2 className="text-xl font-semibold text-red-700 dark:text-red-400 mb-3">
+                  🗑️ Wallet Deletion Policy
+                </h2>
+                <ul className="space-y-2 text-red-700 dark:text-red-300">
+                  <li className="flex items-start">
+                    <span className="text-red-500 mr-2">•</span>
+                    You can delete wallets only when they have a zero balance
+                  </li>
+                  <li className="flex items-start">
+                    <span className="text-red-500 mr-2">•</span>
+                    Deleting a wallet will remove all associated transactions and history
+                  </li>
+                  <li className="flex items-start">
+                    <span className="text-red-500 mr-2">•</span>
+                    Wallets deleted are permanent and cannot be recovered
+                  </li>
+                  <li className="flex items-start">
+                    <span className="text-red-500 mr-2">•</span>
+                    All budgets and goals linked to the wallet will be affected
+                  </li>
+                  <li className="flex items-start">
+                    <span className="text-red-500 mr-2">•</span>
+                    We recommend exporting your wallet data before deletion for record keeping
+                  </li>
+                  <li className="flex items-start">
+                    <span className="text-red-500 mr-2">•</span>
+                    Primary or default wallets require special handling before deletion
                   </li>
                 </ul>
               </div>
