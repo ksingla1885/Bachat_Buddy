@@ -22,7 +22,7 @@ function LineChartComponent({ data }) {
       const netFlow = incomeValue - expenseValue;
       
       return (
-        <div className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm border border-gray-200 dark:border-gray-700 rounded-xl p-4 shadow-2xl">
+        <div className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-md border border-gray-200 dark:border-gray-700 rounded-xl p-4 shadow-2xl z-[9999] relative">
           <p className="font-semibold text-gray-900 dark:text-white mb-3">
             {new Date(label).toLocaleDateString('en-IN', { 
               day: 'numeric', 

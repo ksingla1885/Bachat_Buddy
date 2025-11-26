@@ -17,10 +17,11 @@ function BarChartComponent({ data }) {
     if (active && payload && payload.length) {
       const budgetValue = payload.find(p => p.dataKey === 'budget')?.value || 0;
       const spentValue = payload.find(p => p.dataKey === 'spent')?.value || 0;
-      const percentage = budgetValue > 0 ? ((spentValue / budgetValue) * 100).toFixed(1) : 0;
+      const remaining = Math.max(0, budgetValue - spentValue);
+      const percentageSpent = budgetValue > 0 ? (spentValue / budgetValue) * 100 : 0;
       
       return (
-        <div className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm border border-gray-200 dark:border-gray-700 rounded-xl p-4 shadow-2xl">
+        <div className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-md border border-gray-200 dark:border-gray-700 rounded-xl p-4 shadow-2xl z-[9999] relative">
           <p className="font-semibold text-gray-900 dark:text-white mb-3">{label}</p>
           <div className="space-y-2">
             <div className="flex items-center justify-between">

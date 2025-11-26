@@ -7,15 +7,17 @@ import NavigationLinks from './NavigationLinks';
 import MobileMenu from './MobileMenu';
 import PointsInfoModal from './PointsInfoModal';
 import { useAuth } from '../contexts/AuthContext';
-import { Menu, Info } from 'lucide-react';
+import { Menu, Info, X } from 'lucide-react';
 
 function Navbar() {
   const { user } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isPointsModalOpen, setIsPointsModalOpen] = useState(false);
 
   const isLandingPage = location.pathname === '/';
+  const isPointsInfoPage = location.pathname === '/points-info';
 
   return (
     <nav className={`sticky top-0 z-50 backdrop-blur-lg border-b shadow-soft transition-all duration-300 ${
@@ -45,11 +47,19 @@ function Navbar() {
             
             {user && (
               <button
-                onClick={() => navigate('/points-info')}
-                className="p-2 rounded-xl text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-300"
-                title="Points & Policies"
+                onClick={() => isPointsInfoPage ? navigate(-1) : navigate('/points-info')}
+                className={`p-2 rounded-xl transition-all duration-300 ${
+                  isPointsInfoPage 
+                    ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400' 
+                    : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                }`}
+                title={isPointsInfoPage ? "Back to previous page" : "Points & Policies"}
               >
-                <Info className="h-5 w-5" />
+                {isPointsInfoPage ? (
+                  <X className="h-5 w-5" />
+                ) : (
+                  <Info className="h-5 w-5" />
+                )}
               </button>
             )}
 
@@ -76,6 +86,14 @@ function Navbar() {
         )}
         
       </div>
+
+      {/* Points Info Modal - Only show when not on the points-info page */}
+      {!isPointsInfoPage && (
+        <PointsInfoModal 
+          isOpen={isPointsModalOpen} 
+          onClose={() => setIsPointsModalOpen(false)} 
+        />
+      )}
     </nav>
   );
 }

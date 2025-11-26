@@ -19,7 +19,7 @@ function DonutChart({ data }) {
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
       return (
-        <div className="bg-white/98 dark:bg-gray-800/98 backdrop-blur-md border border-gray-200 dark:border-gray-700 rounded-xl p-4 shadow-2xl transform scale-105 transition-all duration-200 z-50">
+        <div className="bg-white/98 dark:bg-gray-800/98 backdrop-blur-md border border-gray-200 dark:border-gray-700 rounded-xl p-4 shadow-2xl transform scale-105 transition-all duration-200 z-[9999] relative">
           <p className="font-semibold text-gray-900 dark:text-white mb-2">{payload[0].name}</p>
           <p className="text-lg font-bold text-purple-600 dark:text-purple-400">
             ₹{payload[0].value.toLocaleString()}

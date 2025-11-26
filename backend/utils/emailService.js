@@ -122,3 +122,77 @@ exports.send2FAOtpEmail = async (userEmail, { name, otp }) => {
     return { ok: false, error: error.message };
   }
 };
+
+exports.sendBudgetAlert = async (userEmail, { category, budgetAmount, spentAmount, threshold }) => {
+  try {
+    const percentUsed = Math.round((spentAmount / budgetAmount) * 100);
+    const remainingBudget = budgetAmount - spentAmount;
+    
+    const alertColor = threshold === 100 ? '#f44336' : '#ff9800';
+    const alertTitle = threshold === 100 ? '⚠️ Budget Exceeded!' : '🔔 Budget Alert (80%)';
+    
+    const subject = threshold === 100 
+      ? `BachatBuddy: Budget Exceeded for ${category}`
+      : `BachatBuddy: Budget Alert for ${category}`;
+
+    await transporter.sendMail({
+      from: `"${FROM_NAME}" <${FROM_EMAIL}>`,
+      to: userEmail,
+      subject,
+      html: `
+        <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f5f5f5; padding: 20px;">
+          <div style="background: linear-gradient(135deg, ${alertColor}, #d32f2f); padding: 30px; text-align: center; border-radius: 10px 10px 0 0; color: white;">
+            <h1 style="margin: 0; font-size: 24px; font-weight: 600;">${alertTitle}</h1>
+          </div>
+          <div style="background-color: white; padding: 30px; border-radius: 0 0 10px 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+            <p style="color: #333; font-size: 16px; margin-bottom: 20px;">Your <strong>${category}</strong> budget ${threshold === 100 ? 'has been exceeded' : 'is running low'}.</p>
+            
+            <div style="background-color: #f5f5f5; border-left: 4px solid ${alertColor}; padding: 20px; border-radius: 5px; margin: 25px 0;">
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 15px;">
+                <div>
+                  <p style="margin: 0; color: #999; font-size: 13px; text-transform: uppercase;">Budget Amount</p>
+                  <p style="margin: 5px 0 0 0; color: #333; font-size: 20px; font-weight: 700;">₹${budgetAmount.toLocaleString('en-IN')}</p>
+                </div>
+                <div>
+                  <p style="margin: 0; color: #999; font-size: 13px; text-transform: uppercase;">Amount Spent</p>
+                  <p style="margin: 5px 0 0 0; color: ${threshold === 100 ? '#f44336' : '#ff9800'}; font-size: 20px; font-weight: 700;">₹${spentAmount.toLocaleString('en-IN')}</p>
+                </div>
+              </div>
+              
+              <div style="background-color: white; padding: 15px; border-radius: 5px; margin-bottom: 15px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+                  <span style="font-size: 14px; color: #666;">Usage: <strong>${percentUsed}%</strong></span>
+                  <span style="font-size: 12px; color: #999;">${threshold === 100 ? 'Over Budget' : '80% Threshold'}</span>
+                </div>
+                <div style="background-color: #e0e0e0; height: 8px; border-radius: 4px; overflow: hidden;">
+                  <div style="background-color: ${alertColor}; height: 100%; width: ${Math.min(percentUsed, 100)}%; border-radius: 4px;"></div>
+                </div>
+              </div>
+              
+              ${threshold === 100 
+                ? `<p style="margin: 0; color: #f44336; font-size: 14px; font-weight: 600;">You have exceeded your budget by ₹${Math.abs(remainingBudget).toLocaleString('en-IN')}</p>` 
+                : `<p style="margin: 0; color: #ff9800; font-size: 14px; font-weight: 600;">Remaining Budget: ₹${remainingBudget.toLocaleString('en-IN')}</p>`}
+            </div>
+            
+            <div style="background-color: #fef3cd; border-left: 4px solid #ffc107; padding: 15px; border-radius: 5px; margin: 20px 0;">
+              <p style="margin: 0; color: #856404; font-size: 13px;">💡 <strong>Tip:</strong> Review your spending in the ${category} category and adjust if needed.</p>
+            </div>
+            
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="http://localhost:3000/dashboard" style="display: inline-block; background: linear-gradient(135deg, #4f46e5, #7c3aed); color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: 600; font-size: 15px;">View Budget Details</a>
+            </div>
+            
+            <p style="color: #999; font-size: 13px; line-height: 1.6; margin-top: 25px; padding-top: 20px; border-top: 1px solid #eee;">
+              You can manage your budget alerts in your profile settings. This is an automated message, please do not reply.
+            </p>
+            <p style="color: #999; font-size: 13px; margin-top: 15px;">Best regards,<br><strong>The BachatBuddy Team</strong></p>
+          </div>
+        </div>
+      `
+    });
+    return { ok: true };
+  } catch (error) {
+    console.error('Error sending budget alert email:', error);
+    return { ok: false, error: error.message };
+  }
+};
