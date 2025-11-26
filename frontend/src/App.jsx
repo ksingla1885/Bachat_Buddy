@@ -1,4 +1,5 @@
 import React from 'react';
+import { Toaster } from 'react-hot-toast';
 import { Route, Routes, Navigate, unstable_HistoryRouter as HistoryRouter } from 'react-router-dom';
 import { createBrowserHistory } from 'history';
 import { ThemeProvider } from './contexts/ThemeContext';
@@ -67,7 +68,39 @@ function App() {
     >
       <ThemeProvider>
         <AuthProvider>
-          <Routes>
+            <Toaster
+              position="top-center"
+              gutter={12}
+              toastOptions={{
+                duration: 4500,
+                // Global style for toasts; each toast can still override
+                style: {
+                  borderRadius: '12px',
+                  background: '#ffffff',
+                  color: '#0f172a',
+                  boxShadow: '0 10px 30px rgba(2,6,23,0.15)',
+                  width: 'min(720px, 92%)',
+                  margin: '0 auto',
+                  padding: '14px 18px',
+                  border: '1px solid rgba(15,23,42,0.06)'
+                },
+                success: {
+                  icon: '✅',
+                  style: {
+                    borderLeft: '6px solid #10b981',
+                    background: '#f6fffb'
+                  }
+                },
+                error: {
+                  icon: '⚠️',
+                  style: {
+                    borderLeft: '6px solid #ef4444',
+                    background: '#fff5f5'
+                  }
+                }
+              }}
+            />
+            <Routes>
             {/* Public Routes */}
             <Route 
               path="/" 

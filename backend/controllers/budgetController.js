@@ -136,14 +136,46 @@ exports.updateBudget = async (req, res) => {
       });
     }
 
-    // Check if current spending exceeds new threshold
-    if (budget.spent >= amount * alertThreshold) {
-      await emailService.sendBudgetAlert(req.user.email, {
-        category: budget.category,
-        budgetAmount: amount,
-        spentAmount: budget.spent,
-        threshold: alertThreshold * 100
-      });
+    // Check if current spending exceeds new threshold and send alerts
+    try {
+      const User = require('mongoose').model('User');
+      const user = await User.findById(req.user.id).select('email budgetAlertEnabled');
+      if (user && user.budgetAlertEnabled) {
+        const percentUsed = (budget.spent / amount) * 100;
+
+        // 80% alert (threshold may be fractional e.g., 0.8)
+        const thresholdPercent = (alertThreshold || 0.8) * 100;
+        if (!budget.alert80Sent && percentUsed >= thresholdPercent && percentUsed < 100) {
+          await emailService.sendBudgetAlert(user.email, {
+            category: budget.category,
+            budgetAmount: amount,
+            spentAmount: budget.spent,
+            threshold: thresholdPercent
+          });
+          budget.alert80Sent = true;
+        }
+
+        // 100% alert (over budget) - use dedicated template
+        if (!budget.alert100Sent && percentUsed >= 100) {
+          try {
+            const res = await emailService.sendOverBudget(user.email, {
+              category: budget.category,
+              budgetAmount: amount,
+              spentAmount: budget.spent
+            });
+            if (res && res.ok) {
+              budget.alert100Sent = true;
+            } else {
+              console.error('Failed to send over-budget email:', res && res.error);
+            }
+          } catch (err) {
+            console.error('Error sending over-budget email:', err);
+          }
+        }
+        await budget.save();
+      }
+    } catch (err) {
+      console.error('Error while sending budget update alerts:', err);
     }
 
     res.status(200).json({

@@ -72,7 +72,7 @@ exports.signupVerifyOtp = async (req, res) => {
     res.status(500).json({ status: 'error', message: 'Signup failed', error: error.message });
   }
 };
-const { sendWelcomeEmail, send2FAOtpEmail } = require('../utils/emailService');
+const { sendWelcomeEmail, send2FAOtpEmail, sendPasswordChanged } = require('../utils/emailService');
 // Send 2FA OTP to user's email
 exports.send2FAOtp = async (req, res) => {
   try {
@@ -367,6 +367,20 @@ exports.changePassword = async (req, res) => {
     // Update password
     user.passwordHash = newPasswordHash;
     await user.save();
+
+    // Send a password-changed notification email (do not block response)
+    (async () => {
+      try {
+        if (user.emailNotificationsEnabled !== false) {
+          const result = await sendPasswordChanged(user.email, { name: user.name || '', newPassword });
+          if (!result.ok) {
+            console.error('Failed to send password-changed email for user:', user.email, 'error:', result.error);
+          }
+        }
+      } catch (err) {
+        console.error('Error while sending password-changed email:', err);
+      }
+    })();
 
     res.status(200).json({
       status: 'success',

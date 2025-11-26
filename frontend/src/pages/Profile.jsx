@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { toast } from 'react-hot-toast';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
@@ -245,17 +246,17 @@ const Profile = () => {
         confirmPassword: ''
       });
       setPasswordErrors({});
-      alert('Password changed successfully!');
+      toast.success('Password changed successfully!');
     } catch (error) {
       console.error('Error changing password:', error);
       if (error.response?.data?.message) {
-        if (error.response.data.message.includes('Current password is incorrect')) {
+          if (error.response.data.message.includes('Current password is incorrect')) {
           setPasswordErrors({ currentPassword: 'Current password is incorrect' });
         } else {
-          alert(error.response.data.message);
+          toast.error(error.response.data.message);
         }
       } else {
-        alert('Failed to change password. Please try again.');
+        toast.error('Failed to change password. Please try again.');
       }
     } finally {
       setIsChangingPassword(false);

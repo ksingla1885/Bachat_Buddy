@@ -81,6 +81,9 @@ mongoose
 // ========================
 require("./cronJobs/recurringTransactions");
 require("./cronJobs/leaderboardReset")();
+// Budget alerts: daily monitor and monthly reset
+require("./cronJobs/budgetAlertMonitor")();
+require("./cronJobs/resetBudgetAlerts")();
 
 // ========================
 // Start Server

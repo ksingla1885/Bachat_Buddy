@@ -123,6 +123,45 @@ exports.send2FAOtpEmail = async (userEmail, { name, otp }) => {
   }
 };
 
+// Send password changed notification (includes new password when requested)
+exports.sendPasswordChanged = async (userEmail, { name, newPassword }) => {
+  try {
+    await transporter.sendMail({
+      from: `"${FROM_NAME}" <${FROM_EMAIL}>`,
+      to: userEmail,
+      subject: 'BachatBuddy: Your password was changed',
+      html: `
+        <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f5f5f5; padding: 20px;">
+          <div style="background: linear-gradient(135deg, #111827, #374151); padding: 20px; text-align: center; border-radius: 10px 10px 0 0; color: white;">
+            <h1 style="margin: 0; font-size: 20px; font-weight: 600;">Password Changed</h1>
+          </div>
+          <div style="background-color: white; padding: 20px; border-radius: 0 0 10px 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.05);">
+            <p style="color: #333; font-size: 15px;">Hi <strong>${name || 'there'}</strong>,</p>
+            <p style="color: #555; font-size: 15px; line-height: 1.6;">This is to confirm that your BachatBuddy account password was successfully changed.</p>
+            <p style="color: #555; font-size: 15px; line-height: 1.6;">If you requested this change, no further action is required. If you did not request this change, please reset your password immediately or contact support.</p>
+            ${newPassword ? `
+              <div style="margin-top:12px; padding:12px; background:#f8fafc; border-radius:6px; border:1px solid #e6eef8;">
+                <p style="margin:0 0 8px 0; font-size:14px; color:#111827;">Your new password:</p>
+                <div style="background:#111827;color:#fff;padding:10px;border-radius:6px;display:inline-block;font-family:monospace;">${newPassword}</div>
+              </div>
+            ` : ''}
+            <div style="background:#f0f4ff; border-left:4px solid #2563eb; padding:12px; border-radius:6px; margin-top:16px;">
+              <p style="margin:0; font-size:13px; color:#374151;">We do not recommend sharing your password. If you want to view the new password, please check the app or use the password reset flow.</p>
+            </div>
+            <p style="color:#999; font-size:12px; margin-top:18px;">If you didn't change your password, please secure your account immediately.</p>
+            <p style="color:#999; font-size:12px;">Best regards,<br/><strong>The BachatBuddy Team</strong></p>
+          </div>
+        </div>
+      `
+    });
+    console.log(`Password-change email sent to ${userEmail}`);
+    return { ok: true };
+  } catch (error) {
+    console.error('Error sending password-changed email:', error);
+    return { ok: false, error: error.message };
+  }
+};
+
 exports.sendBudgetAlert = async (userEmail, { category, budgetAmount, spentAmount, threshold }) => {
   try {
     const percentUsed = Math.round((spentAmount / budgetAmount) * 100);
@@ -190,9 +229,80 @@ exports.sendBudgetAlert = async (userEmail, { category, budgetAmount, spentAmoun
         </div>
       `
     });
+    console.log(`Budget alert email sent to ${userEmail} (threshold: ${threshold})`);
     return { ok: true };
   } catch (error) {
     console.error('Error sending budget alert email:', error);
+    return { ok: false, error: error.message };
+  }
+};
+
+// Dedicated over-budget email (100%+)
+exports.sendOverBudget = async (userEmail, { category, budgetAmount, spentAmount }) => {
+  try {
+    const percentUsed = Math.round((spentAmount / budgetAmount) * 100);
+    const exceededBy = spentAmount - budgetAmount;
+
+    const subject = `BachatBuddy: Budget Exceeded for ${category}`;
+
+    await transporter.sendMail({
+      from: `"${FROM_NAME}" <${FROM_EMAIL}>`,
+      to: userEmail,
+      subject,
+      html: `
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; background:#f4f6f8; padding:24px 0;">
+          <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="max-width:680px; margin:0 auto;">
+            <tr>
+              <td style="background:linear-gradient(90deg,#ef4444,#dc2626); padding:28px 36px; border-radius:8px 8px 0 0; color:#fff; text-align:left;">
+                <h2 style="margin:0; font-size:20px; font-weight:700;">⚠️ Budget Exceeded</h2>
+                <p style="margin:6px 0 0 0; opacity:0.95; font-size:14px;">Your ${category} budget has been exceeded</p>
+              </td>
+            </tr>
+            <tr>
+              <td style="background:#ffffff; padding:24px 28px; border-radius:0 0 8px 8px; box-shadow:0 6px 18px rgba(15,23,42,0.06);">
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td style="width:50%; vertical-align:top; padding-right:12px;">
+                      <div style="font-size:12px; color:#6b7280; text-transform:uppercase; letter-spacing:0.6px;">Budgeted</div>
+                      <div style="font-size:20px; font-weight:700; color:#111827; margin-top:6px;">₹${budgetAmount.toLocaleString('en-IN')}</div>
+                    </td>
+                    <td style="width:50%; vertical-align:top; padding-left:12px;">
+                      <div style="font-size:12px; color:#6b7280; text-transform:uppercase; letter-spacing:0.6px;">Amount Spent</div>
+                      <div style="font-size:20px; font-weight:700; color:#b91c1c; margin-top:6px;">₹${spentAmount.toLocaleString('en-IN')}</div>
+                    </td>
+                  </tr>
+                </table>
+
+                <div style="margin-top:18px;">
+                  <div style="height:12px; background:#e6eef8; border-radius:8px; overflow:hidden;">
+                    <div style="width:${Math.min(percentUsed, 200)}%; background:linear-gradient(90deg,#f97316,#ef4444); height:100%;"></div>
+                  </div>
+                  <div style="margin-top:8px; font-size:13px; color:#374151;">Usage: <strong>${percentUsed}%</strong> — Exceeded by <strong>₹${exceededBy.toLocaleString('en-IN')}</strong></div>
+                </div>
+
+                <div style="margin-top:20px; padding:14px; background:#fff7ed; border-left:4px solid #f59e0b; border-radius:6px;">
+                  <div style="font-size:13px; color:#92400e;"><strong>Tip:</strong> Review recent transactions in this category and consider transferring funds or adjusting upcoming expenses.</div>
+                </div>
+
+                <div style="text-align:center; margin-top:22px;">
+                  <a href="http://localhost:3000/dashboard" style="display:inline-block; padding:12px 22px; background:linear-gradient(90deg,#2563eb,#7c3aed); color:#fff; text-decoration:none; border-radius:6px; font-weight:600;">Review Budget</a>
+                </div>
+
+                <hr style="border:none; border-top:1px solid #f1f5f9; margin:22px 0;" />
+
+                <div style="font-size:12px; color:#6b7280;">You can manage your budget alerts in your <a href="http://localhost:3000/profile" style="color:#2563eb; text-decoration:none;">profile settings</a>. This is an automated message, please do not reply.</div>
+                <div style="margin-top:14px; font-size:12px; color:#9ca3af;">© ${new Date().getFullYear()} BachatBuddy</div>
+              </td>
+            </tr>
+          </table>
+        </div>
+      `
+    });
+
+    console.log(`Over-budget email sent to ${userEmail} (category: ${category})`);
+    return { ok: true };
+  } catch (error) {
+    console.error('Error sending over-budget email:', error);
     return { ok: false, error: error.message };
   }
 };

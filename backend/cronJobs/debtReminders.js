@@ -17,7 +17,7 @@ const sendDebtReminders = async () => {
         $lte: threeDaysFromNow
       },
       status: 'active'
-    }).populate('userId', 'email name');
+    }).populate('userId', 'email name emailNotificationsEnabled');
 
     if (upcomingDebts.length === 0) {
       console.log('No debt reminders to send');
@@ -39,6 +39,12 @@ const sendDebtReminders = async () => {
     // Send reminder emails
     for (const userId in debtsByUser) {
       const { user, debts } = debtsByUser[userId];
+
+        // Respect user's email notification preference
+        if (user.emailNotificationsEnabled === false) {
+          console.log(`Skipping debt reminders for ${user.email} (email notifications disabled)`);
+          continue;
+        }
 
       const debtDetails = debts.map(debt => `
         <tr>

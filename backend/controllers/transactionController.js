@@ -97,35 +97,55 @@ exports.createTransaction = async (req, res) => {
       if (budget) {
         // Update spent amount
         budget.spent = (budget.spent || 0) + numericAmount;
-        const percentUsed = (budget.spent / budget.amount) * 100;
-        let alertSent = false;
-        // Fetch user to check alert preference
-        const user = await mongoose.model('User').findById(req.user.id);
-        if (user.budgetAlertEnabled) {
-          // 80% alert
-          if (!budget.alert80Sent && percentUsed >= 80 && percentUsed < 100) {
-            await emailService.sendBudgetAlert(user.email, {
-              category,
-              budgetAmount: budget.amount,
-              spentAmount: budget.spent,
-              threshold: 80
-            });
-            budget.alert80Sent = true;
-            alertSent = true;
+          const percentUsed = (budget.spent / (budget.amount || 1)) * 100;
+          let alertSent = false;
+          // Fetch user to check alert preference
+          const user = await mongoose.model('User').findById(req.user.id);
+          if (user && user.budgetAlertEnabled) {
+            const thresholdPercent = (budget.alertThreshold || 0.8) * 100;
+
+            // Threshold alert (e.g., 80% by default or custom)
+            if (!budget.alert80Sent && percentUsed >= thresholdPercent && percentUsed < 100) {
+              try {
+                const sendRes = await emailService.sendBudgetAlert(user.email, {
+                  category,
+                  budgetAmount: budget.amount,
+                  spentAmount: budget.spent,
+                  threshold: thresholdPercent
+                });
+                if (sendRes && sendRes.ok) {
+                  budget.alert80Sent = true;
+                  alertSent = true;
+                  console.log(`Budget threshold alert sent to ${user.email} for ${category} (${percentUsed.toFixed(2)}% used)`);
+                } else {
+                  console.error(`Failed to send budget threshold alert to ${user.email} for ${category}:`, sendRes && sendRes.error);
+                }
+              } catch (err) {
+                console.error('Error sending budget threshold alert:', err);
+              }
+            }
+
+            // 100% alert (over budget) - use dedicated template
+            if (!budget.alert100Sent && percentUsed >= 100) {
+              try {
+                const sendRes = await emailService.sendOverBudget(user.email, {
+                  category,
+                  budgetAmount: budget.amount,
+                  spentAmount: budget.spent
+                });
+                if (sendRes && sendRes.ok) {
+                  budget.alert100Sent = true;
+                  alertSent = true;
+                  console.log(`Budget exceeded alert sent to ${user.email} for ${category} (${percentUsed.toFixed(2)}% used)`);
+                } else {
+                  console.error(`Failed to send budget exceeded alert to ${user.email} for ${category}:`, sendRes && sendRes.error);
+                }
+              } catch (err) {
+                console.error('Error sending budget exceeded alert:', err);
+              }
+            }
           }
-          // 100% alert
-          if (!budget.alert100Sent && percentUsed >= 100) {
-            await emailService.sendBudgetAlert(user.email, {
-              category,
-              budgetAmount: budget.amount,
-              spentAmount: budget.spent,
-              threshold: 100
-            });
-            budget.alert100Sent = true;
-            alertSent = true;
-          }
-        }
-        if (alertSent) await budget.save();
+          if (alertSent) await budget.save();
       }
     }
 
