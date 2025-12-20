@@ -1,4 +1,4 @@
-const { generateContent } = require('../services/geminiService');
+const { generateGeminiContent } = require('../services/geminiService');
 // ...existing code...
 
 const getGeminiResponse = async (req, res) => {
@@ -7,7 +7,8 @@ const getGeminiResponse = async (req, res) => {
     if (!prompt) {
       return res.status(400).json({ error: 'Prompt is required.' });
     }
-    const result = await generateContent(prompt);
+    const messages = [{ parts: [{ text: prompt }] }];
+    const result = await generateGeminiContent(messages);
     res.json(result);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -143,7 +144,6 @@ const chatWithAssistant = async (req, res) => {
     }
 
     // Get financial context
-    const { generateGeminiContent } = require('../services/geminiService');
     const financialContext = await getFinancialContext(userId);
 
     // Build a rich context string for the AI
@@ -164,6 +164,8 @@ Recurring: ${financialContext.recurringSummary}`;
     if (financialContext.transactions && financialContext.transactions.length > 0) {
       const expenseTransactions = financialContext.transactions.filter(t => (t.type || '').trim().toLowerCase() === 'expense');
       const incomeTransactions = financialContext.transactions.filter(t => (t.type || '').trim().toLowerCase() === 'income');
+
+      // Breakdown for Expenses
       if (expenseTransactions.length > 0) {
         const categoryTotals = {};
         expenseTransactions.forEach(t => {
@@ -180,9 +182,23 @@ Recurring: ${financialContext.recurringSummary}`;
           });
         }
       }
-      // If there are only income transactions, clarify that
-      else if (incomeTransactions.length > 0) {
-        context += `\nNote: Only income transactions are recorded. Please add expenses to analyze spending categories.`;
+
+      // Breakdown for Income
+      if (incomeTransactions.length > 0) {
+        const incomeTotals = {};
+        incomeTransactions.forEach(t => {
+          if (t.category && typeof t.category === 'string') {
+            const cat = t.category.trim().toLowerCase();
+            incomeTotals[cat] = (incomeTotals[cat] || 0) + t.amount;
+          }
+        });
+        const sortedIncome = Object.entries(incomeTotals).sort((a, b) => b[1] - a[1]);
+        if (sortedIncome.length > 0) {
+          context += `\nIncome Category Breakdown:`;
+          sortedIncome.forEach(([cat, amt]) => {
+            context += `\n- ${cat}: ₹${amt}`;
+          });
+        }
       }
     }
 
@@ -195,28 +211,7 @@ Recurring: ${financialContext.recurringSummary}`;
     const geminiResult = await generateGeminiContent(geminiMessages);
     let aiResponse = geminiResult?.candidates?.[0]?.content?.parts?.[0]?.text || null;
 
-    // Always provide top expense category if any expenses exist (robust)
-    const expenseTransactions = financialContext.transactions.filter(t => (t.type || '').trim().toLowerCase() === 'expense');
-    // Debug: Log detected expense transactions
-    console.log('DEBUG: Expense transactions for user', userId);
-    expenseTransactions.forEach(t => {
-      console.log(`  - Date: ${t.date}, Amount: ${t.amount}, Category: '${t.category}'`);
-    });
-    if (expenseTransactions.length > 0) {
-      const categoryTotals = {};
-      expenseTransactions.forEach(t => {
-        if (t.category && typeof t.category === 'string') {
-          const cat = t.category.trim().toLowerCase();
-          categoryTotals[cat] = (categoryTotals[cat] || 0) + t.amount;
-        }
-      });
-      const sortedCategories = Object.entries(categoryTotals).sort((a, b) => b[1] - a[1]);
-      if (sortedCategories.length > 0) {
-        aiResponse = `Based on your recorded expenses, the category you spent the most on is '${sortedCategories[0][0]}' with a total of ₹${sortedCategories[0][1]}.`;
-      } else {
-        aiResponse = `You have expense transactions, but no categories are assigned. Please categorize your expenses for better insights.`;
-      }
-    }
+    // AI Response is already generated above. We rely on the AI to answer the specific question.
 
     if (!aiResponse) {
       return res.status(502).json({
