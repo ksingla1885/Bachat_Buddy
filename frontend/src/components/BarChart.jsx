@@ -41,18 +41,18 @@ function BarChartComponent({ data }) {
             <div className="border-t border-gray-200 dark:border-gray-600 pt-2 mt-2">
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-600 dark:text-gray-400">Usage:</span>
-                <span className={`font-bold ${percentage > 100 ? 'text-red-600' : percentage > 80 ? 'text-yellow-600' : 'text-green-600'}`}>
-                  {percentage}%
+                <span className={`font-bold ${percentageSpent > 100 ? 'text-red-600' : percentageSpent > 80 ? 'text-yellow-600' : 'text-green-600'}`}>
+                  {Math.round(percentageSpent)}%
                 </span>
               </div>
               <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 mt-1">
                 <div 
                   className={`h-2 rounded-full transition-all duration-300 ${
-                    percentage > 100 ? 'bg-gradient-to-r from-red-500 to-red-600' :
-                    percentage > 80 ? 'bg-gradient-to-r from-yellow-500 to-orange-500' :
+                    percentageSpent > 100 ? 'bg-gradient-to-r from-red-500 to-red-600' :
+                    percentageSpent > 80 ? 'bg-gradient-to-r from-yellow-500 to-orange-500' :
                     'bg-gradient-to-r from-green-500 to-emerald-500'
                   }`}
-                  style={{ width: `${Math.min(percentage, 100)}%` }}
+                  style={{ width: `${Math.min(percentageSpent, 100)}%` }}
                 ></div>
               </div>
             </div>

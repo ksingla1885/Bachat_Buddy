@@ -16,6 +16,7 @@ const FROM_EMAIL = process.env.SMTP_USER || process.env.EMAIL_USER || 'no-reply@
 const FROM_NAME = process.env.EMAIL_FROM_NAME || 'BachatBuddy';
 
 exports.sendSignupOtpEmail = async (userEmail, { name, otp }) => {
+  console.log('DEBUG: Sending signup OTP email to', userEmail, 'with OTP:', otp);
   try {
     await transporter.sendMail({
       from: `"${FROM_NAME}" <${FROM_EMAIL}>`,
@@ -88,6 +89,7 @@ exports.sendWelcomeEmail = async (userEmail, { name, email, password }) => {
 };
 
 exports.send2FAOtpEmail = async (userEmail, { name, otp }) => {
+  console.log('DEBUG: Sending 2FA OTP email to', userEmail, 'with OTP:', otp);
   try {
     await transporter.sendMail({
       from: `"${FROM_NAME}" <${FROM_EMAIL}>`,

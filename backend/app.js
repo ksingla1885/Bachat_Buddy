@@ -1,7 +1,10 @@
+
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const morgan = require('morgan');
+// AI Assistant Gemini route
+const aiAssistantRoutes = require('./routes/aiAssistantRoutes');
 
 // Import routes
 const authRoutes = require('./routes/authRoutes');
@@ -48,6 +51,10 @@ app.use('/api/contact', contactRoutes);
 // Phase 2 routes
 app.use('/api/debts', debtRoutes);
 app.use('/api/goals', goalRoutes);
+
+// Financial Insights & AI Assistant
+const insightRoutes = require('./routes/insightRoutes');
+app.use('/api/insights', insightRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/monthly-tiers', monthlySavingsTierRoutes);
