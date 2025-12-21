@@ -21,7 +21,11 @@ exports.getSpendingAnalysis = async (req, res) => {
     if (startDate || endDate) {
       matchStage.date = {};
       if (startDate) matchStage.date.$gte = new Date(startDate);
-      if (endDate) matchStage.date.$lte = new Date(endDate);
+      if (endDate) {
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        matchStage.date.$lte = end;
+      }
     }
 
     const spendingByCategory = await Transaction.aggregate([
@@ -80,7 +84,11 @@ exports.getIncomeReport = async (req, res) => {
     if (startDate || endDate) {
       matchStage.date = {};
       if (startDate) matchStage.date.$gte = new Date(startDate);
-      if (endDate) matchStage.date.$lte = new Date(endDate);
+      if (endDate) {
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        matchStage.date.$lte = end;
+      }
     }
 
     const incomeBySource = await Transaction.aggregate([
@@ -131,20 +139,69 @@ exports.getBudgetReport = async (req, res) => {
     const { startDate, endDate } = req.query;
     const userId = req.user.id;
 
-    // Get all budgets
-    const budgets = await Budget.find({ userId });
+    // 1. Determine Date Range
+    let start, end;
+    if (startDate && endDate) {
+      start = new Date(startDate);
+      end = new Date(endDate);
+    } else {
+      // Default to current month if no dates provided
+      const now = new Date();
+      start = new Date(now.getFullYear(), now.getMonth(), 1);
+      end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    }
 
-    // Get transactions for the period
+    const startYear = start.getFullYear();
+    const startMonth = start.getMonth() + 1;
+    const endYear = end.getFullYear();
+    const endMonth = end.getMonth() + 1;
+
+    // 2. Build Budget Filter
+    // We want budgets where (year, month) falls within [start, end]
+    const budgetQuery = {
+      userId,
+      $or: []
+    };
+
+    if (startYear === endYear) {
+      budgetQuery.$or.push({
+        year: startYear,
+        month: { $gte: startMonth, $lte: endMonth }
+      });
+    } else {
+      // Start Year: from startMonth to 12
+      budgetQuery.$or.push({ year: startYear, month: { $gte: startMonth } });
+      // End Year: from 1 to endMonth
+      budgetQuery.$or.push({ year: endYear, month: { $lte: endMonth } });
+      // Middle Years: all months
+      if (endYear - startYear > 1) {
+        budgetQuery.$or.push({ year: { $gt: startYear, $lt: endYear } });
+      }
+    }
+
+    // 3. Fetch Budgets
+    const rawBudgets = await Budget.find(budgetQuery);
+
+    // 4. Aggregate Budgets by Category
+    // If multiple months selected, sum up the budgets for the same category
+    const aggregatedBudgets = {};
+    rawBudgets.forEach(b => {
+      if (!aggregatedBudgets[b.category]) {
+        aggregatedBudgets[b.category] = {
+          category: b.category,
+          amount: 0,
+          spent: 0 // We'll update this from transactions
+        };
+      }
+      aggregatedBudgets[b.category].amount += b.amount;
+    });
+
+    // 5. Get Transaction Spending for the Period
     const matchStage = {
       userId: new mongoose.Types.ObjectId(userId),
       type: 'Expense',
+      date: { $gte: start, $lte: end }
     };
-
-    if (startDate || endDate) {
-      matchStage.date = {};
-      if (startDate) matchStage.date.$gte = new Date(startDate);
-      if (endDate) matchStage.date.$lte = new Date(endDate);
-    }
 
     const categorySpending = await Transaction.aggregate([
       { $match: matchStage },
@@ -156,12 +213,12 @@ exports.getBudgetReport = async (req, res) => {
       }
     ]);
 
-    // Map spending to budgets
-    const budgetReport = budgets.map(budget => {
+    // 6. Merge Spending into Budgets
+    const budgetReport = Object.values(aggregatedBudgets).map(budget => {
       const spending = categorySpending.find(s => s._id === budget.category);
       const spent = spending ? spending.spent : 0;
       const remaining = Math.max(0, budget.amount - spent);
-      const percentage = Math.min(100, Math.round((spent / budget.amount) * 100));
+      const percentage = budget.amount > 0 ? Math.min(100, Math.round((spent / budget.amount) * 100)) : 0;
 
       return {
         category: budget.category,
@@ -173,16 +230,20 @@ exports.getBudgetReport = async (req, res) => {
       };
     });
 
+    // Calculate totals
+    const totalBudget = budgetReport.reduce((sum, b) => sum + b.budget, 0);
+    const totalSpent = budgetReport.reduce((sum, b) => sum + b.spent, 0);
+
     res.json({
       status: 'success',
       data: {
         budgets: budgetReport,
         period: {
-          start: startDate || 'Beginning',
-          end: endDate || 'Now'
+          start: start.toISOString().split('T')[0],
+          end: end.toISOString().split('T')[0]
         },
-        totalBudget: budgets.reduce((sum, b) => sum + b.amount, 0),
-        totalSpent: budgetReport.reduce((sum, b) => sum + b.spent, 0)
+        totalBudget,
+        totalSpent
       }
     });
   } catch (error) {

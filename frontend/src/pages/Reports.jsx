@@ -4,6 +4,13 @@ import { format, subDays, startOfMonth, endOfMonth, subMonths, isBefore, isAfter
 import api from '../services/api';
 import { Card, Button, Alert, ProgressBar } from '../components/ui';
 import { RefreshCw, BarChart2, TrendingUp, PieChart, Calendar, Download } from 'lucide-react';
+import {
+  PieChart as RechartsPieChart, Pie, Cell,
+  BarChart as RechartsBarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
+} from 'recharts';
+
+// Chart Colors
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d', '#ffc658', '#8dd1e1', '#a4de6c', '#d0ed57'];
 
 // Report types
 const REPORT_TYPES = {
@@ -51,7 +58,7 @@ const Reports = () => {
   // Get date range parameters based on selection
   const getDateRangeParams = () => {
     const now = new Date();
-    
+
     switch (dateRange) {
       case 'week':
         return {
@@ -87,7 +94,7 @@ const Reports = () => {
   const fetchReportData = async () => {
     setIsLoading(true);
     setError(null);
-    
+
     try {
       const dateParams = getDateRangeParams();
 
@@ -111,7 +118,7 @@ const Reports = () => {
         } catch (err) {
           throw new Error(`Spending report failed: ${err.response?.data?.message || err.message}`);
         }
-      } 
+      }
       else if (activeTab === REPORT_TYPES.INCOME) {
         try {
           const res = await api.get('/reports/income', { params: dateParams });
@@ -132,15 +139,15 @@ const Reports = () => {
         } catch (err) {
           throw new Error(`Income report failed: ${err.response?.data?.message || err.message}`);
         }
-      } 
+      }
       else if (activeTab === REPORT_TYPES.BUDGET) {
         try {
           const res = await api.get('/reports/budget', { params: dateParams });
           const data = res.data?.data || res.data;
-          
+
           // Handle both 'budgets' and 'categories' field names from backend
           const budgetList = data.budgets || data.categories || [];
-          
+
           setReportData(prev => ({
             ...prev,
             budget: {
@@ -161,10 +168,10 @@ const Reports = () => {
           throw new Error(`Budget report failed: ${err.response?.data?.message || err.message}`);
         }
       }
-      
+
     } catch (err) {
       console.error('Error in fetchReportData:', err);
-      
+
       // Handle authentication errors
       if (err.response?.status === 401) {
         localStorage.removeItem('token');
@@ -202,14 +209,14 @@ const Reports = () => {
         ...prev,
         [field]: newDate
       };
-      
+
       // Ensure start date is before end date
       if (field === 'start' && isAfter(newDate, new Date(prev.end))) {
         newRange.end = newDate;
       } else if (field === 'end' && isBefore(newDate, new Date(prev.start))) {
         newRange.start = newDate;
       }
-      
+
       return newRange;
     });
   };
@@ -230,7 +237,7 @@ const Reports = () => {
         const html = generateHtmlForActiveTab();
         downloadPdfViaPrint(html);
       }
-      
+
     } catch (err) {
       console.error('Export error:', err);
       setError('Failed to generate export. Please try again.');
@@ -245,15 +252,15 @@ const Reports = () => {
     let rows = [];
     if (activeTab === REPORT_TYPES.SPENDING) {
       const d = reportData.spending || {};
-      rows.push(["Category","Total","Count","Percentage"]);
+      rows.push(["Category", "Total", "Count", "Percentage"]);
       (d.categories || []).forEach(c => rows.push([c._id || '', c.total || 0, c.count || 0, (c.percentage || 0).toFixed(2)]));
     } else if (activeTab === REPORT_TYPES.INCOME) {
       const d = reportData.income || {};
-      rows.push(["Source","Total","Count","Percentage"]);
+      rows.push(["Source", "Total", "Count", "Percentage"]);
       (d.sources || []).forEach(s => rows.push([s._id || '', s.total || 0, s.count || 0, (s.percentage || 0).toFixed(2)]));
     } else if (activeTab === REPORT_TYPES.BUDGET) {
       const d = reportData.budget || {};
-      rows.push(["Category","Budget","Spent","Remaining","% Used"]);
+      rows.push(["Category", "Budget", "Spent", "Remaining", "% Used"]);
       (d.categories || []).forEach(c => rows.push([c._id || '', c.budget || 0, c.spent || 0, c.remaining || 0, (c.percentage || 0).toFixed(2)]));
     }
 
@@ -296,7 +303,7 @@ const Reports = () => {
     } else if (activeTab === REPORT_TYPES.BUDGET) {
       title = `Budget Report (${dateParams.startDate} to ${dateParams.endDate})`;
       const d = reportData.budget || {};
-      rows = (d.categories || []).map(c => ({ label: c._id || '', value: `Budget: ₹${(c.budget||0).toLocaleString()} • Spent: ₹${(c.spent||0).toLocaleString()}`, meta: `${(c.percentage || 0).toFixed(2)}%` }));
+      rows = (d.categories || []).map(c => ({ label: c._id || '', value: `Budget: ₹${(c.budget || 0).toLocaleString()} • Spent: ₹${(c.spent || 0).toLocaleString()}`, meta: `${(c.percentage || 0).toFixed(2)}%` }));
     }
 
     const header = `
@@ -364,8 +371,8 @@ const Reports = () => {
         <h3 className="font-medium mb-2">Error Loading Report</h3>
         <p className="text-sm mb-3">{error}</p>
         <div className="flex gap-2">
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             size="sm"
             onClick={fetchReportData}
             disabled={isLoading}
@@ -373,8 +380,8 @@ const Reports = () => {
             <RefreshCw className="w-4 h-4 mr-2" />
             Try Again
           </Button>
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             size="sm"
             onClick={() => navigate('/dashboard')}
           >
@@ -382,7 +389,7 @@ const Reports = () => {
           </Button>
         </div>
       </div>
-      
+
       {/* Debug Info */}
       <details className="bg-gray-100 dark:bg-gray-800 p-3 rounded text-xs text-gray-700 dark:text-gray-300">
         <summary className="cursor-pointer font-medium mb-2">Debug Information</summary>
@@ -390,8 +397,8 @@ const Reports = () => {
           Tab: {activeTab}
           Date Range: {dateRange}
           Loading: {isLoading ? 'true' : 'false'}
-          
-Check your browser console for more details.
+
+          Check your browser console for more details.
         </pre>
       </details>
     </div>
@@ -407,10 +414,16 @@ Check your browser console for more details.
   // Render spending analysis tab
   const renderSpendingAnalysis = () => {
     const { categories = [], totalSpending = 0, period = {} } = reportData.spending || {};
-    
+
     if (!categories.length) {
       return renderNoData();
     }
+
+    // Prepare data for Recharts
+    const chartData = categories.map(cat => ({
+      name: cat._id || 'Unknown',
+      value: cat.total
+    }));
 
     return (
       <div className="space-y-6">
@@ -433,12 +446,41 @@ Check your browser console for more details.
             </p>
           </Card>
         </div>
-        
+
+        {/* Recharts Pie Chart */}
+        <Card className="p-6 flex flex-col items-center">
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4 w-full text-left">Spending Distribution</h3>
+          <div className="h-64 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <RechartsPieChart>
+                <Pie
+                  data={chartData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={80}
+                  paddingAngle={5}
+                  dataKey="value"
+                >
+                  {chartData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip
+                  formatter={(value) => `₹${value.toLocaleString()}`}
+                  contentStyle={{ backgroundColor: 'rgba(255, 255, 255, 0.9)', borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
+                />
+                <Legend />
+              </RechartsPieChart>
+            </ResponsiveContainer>
+          </div>
+        </Card>
+
         <Card className="p-6">
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-lg font-medium text-gray-900 dark:text-white">Spending by Category</h3>
             <div className="flex space-x-2">
-              <Button 
+              <Button
                 onClick={() => handleExport('csv')}
                 disabled={isExporting}
                 className="h-9 px-4 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-medium rounded-lg flex items-center space-x-2 transition-all duration-200 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
@@ -446,7 +488,7 @@ Check your browser console for more details.
                 <Download className="w-4 h-4" />
                 <span>{isExporting ? 'Exporting...' : 'CSV'}</span>
               </Button>
-              <Button 
+              <Button
                 onClick={() => handleExport('pdf')}
                 disabled={isExporting}
                 className="h-9 px-4 bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 text-white font-medium rounded-lg flex items-center space-x-2 transition-all duration-200 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
@@ -456,7 +498,7 @@ Check your browser console for more details.
               </Button>
             </div>
           </div>
-          
+
           <div className="space-y-4 text-gray-900 dark:text-gray-100">
             {categories && categories.length > 0 ? (
               categories.map((category) => {
@@ -468,8 +510,8 @@ Check your browser console for more details.
                       <span className="capitalize">{category._id || 'Unknown'}</span>
                       <span>₹{total.toLocaleString()}</span>
                     </div>
-                    <ProgressBar 
-                      value={percentage} 
+                    <ProgressBar
+                      value={percentage}
                       className="h-2"
                     />
                   </div>
@@ -487,10 +529,16 @@ Check your browser console for more details.
   // Render income report tab
   const renderIncomeReport = () => {
     const { sources = [], totalIncome = 0, period = {} } = reportData.income || {};
-    
+
     if (!sources.length) {
       return renderNoData();
     }
+
+    // Prepare data for Recharts
+    const chartData = sources.map(src => ({
+      name: src._id || 'Unknown',
+      value: src.total
+    }));
 
     return (
       <div className="space-y-6">
@@ -515,12 +563,40 @@ Check your browser console for more details.
             </p>
           </Card>
         </div>
-        
+
+        {/* Recharts Bar Chart */}
+        <Card className="p-6">
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Income Sources</h3>
+          <div className="h-64 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <RechartsBarChart
+                data={chartData}
+                layout="vertical"
+                margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
+                <XAxis type="number" hide={true} />
+                <YAxis type="category" dataKey="name" width={100} />
+                <Tooltip
+                  formatter={(value) => `₹${value.toLocaleString()}`}
+                  cursor={{ fill: 'transparent' }}
+                  contentStyle={{ backgroundColor: 'rgba(255, 255, 255, 0.9)', borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
+                />
+                <Bar dataKey="value" fill="#10B981" radius={[0, 4, 4, 0]}>
+                  {chartData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Bar>
+              </RechartsBarChart>
+            </ResponsiveContainer>
+          </div>
+        </Card>
+
         <Card className="p-6">
           <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white">Income Sources</h3>
+            <h3 className="text-lg font-medium text-gray-900 dark:text-white">Income Details</h3>
             <div className="flex space-x-2">
-              <Button 
+              <Button
                 onClick={() => handleExport('csv')}
                 disabled={isExporting}
                 className="h-9 px-4 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-medium rounded-lg flex items-center space-x-2 transition-all duration-200 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
@@ -528,7 +604,7 @@ Check your browser console for more details.
                 <Download className="w-4 h-4" />
                 <span>{isExporting ? 'Exporting...' : 'CSV'}</span>
               </Button>
-              <Button 
+              <Button
                 onClick={() => handleExport('pdf')}
                 disabled={isExporting}
                 className="h-9 px-4 bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 text-white font-medium rounded-lg flex items-center space-x-2 transition-all duration-200 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
@@ -538,7 +614,7 @@ Check your browser console for more details.
               </Button>
             </div>
           </div>
-          
+
           <div className="space-y-4 text-gray-900 dark:text-gray-100">
             {sources && sources.length > 0 ? (
               sources.map((source) => {
@@ -550,8 +626,8 @@ Check your browser console for more details.
                       <span className="capitalize">{source._id || 'Unknown'}</span>
                       <span>₹{total.toLocaleString()}</span>
                     </div>
-                    <ProgressBar 
-                      value={percentage} 
+                    <ProgressBar
+                      value={percentage}
                       className="h-2 bg-green-100 dark:bg-green-900/50"
                       indicatorClassName="bg-green-500"
                     />
@@ -569,13 +645,12 @@ Check your browser console for more details.
 
   // Render budget report tab
   const renderBudgetReport = () => {
-    const { 
-      categories = [], 
-      totalBudget = 0, 
+    const {
+      categories = [],
+      totalBudget = 0,
       totalSpent = 0,
-      period = {} 
     } = reportData.budget || {};
-    
+
     if (!categories.length) {
       return renderNoData();
     }
@@ -583,6 +658,13 @@ Check your browser console for more details.
     const remainingBudget = totalBudget - totalSpent;
     const percentageUsed = totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0;
     const isOverBudget = remainingBudget < 0;
+
+    // Prepare data for Recharts
+    const chartData = categories.slice(0, 10).map(cat => ({
+      name: cat._id || 'Unknown',
+      Budget: cat.budget,
+      Spent: cat.spent
+    }));
 
     return (
       <div className="space-y-6">
@@ -601,20 +683,43 @@ Check your browser console for more details.
             <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">
               {isOverBudget ? 'Overspent' : 'Remaining'}
             </h3>
-            <p className={`text-2xl font-bold ${
-              isOverBudget ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'
-            }`}>
+            <p className={`text-2xl font-bold ${isOverBudget ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'
+              }`}>
               ₹{Math.abs(remainingBudget).toLocaleString()}
               {isOverBudget && ' over'}
             </p>
           </Card>
         </div>
-        
+
+        {/* Recharts Bar Chart - Budget vs Spent */}
+        <Card className="p-6">
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Budget vs Actuals (Top Categories)</h3>
+          <div className="h-80 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <RechartsBarChart
+                data={chartData}
+                margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                <XAxis dataKey="name" />
+                <YAxis />
+                <Tooltip
+                  formatter={(value) => `₹${value.toLocaleString()}`}
+                  contentStyle={{ backgroundColor: 'rgba(255, 255, 255, 0.9)', borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
+                />
+                <Legend />
+                <Bar dataKey="Budget" fill="#8884d8" name="Budgeted" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="Spent" fill="#82ca9d" name="Spent" radius={[4, 4, 0, 0]} />
+              </RechartsBarChart>
+            </ResponsiveContainer>
+          </div>
+        </Card>
+
         <Card className="p-6">
           <div className="flex justify-between items-center mb-6">
             <h3 className="text-lg font-medium text-gray-900 dark:text-white">Budget Overview</h3>
             <div className="flex space-x-2">
-              <Button 
+              <Button
                 onClick={() => handleExport('csv')}
                 disabled={isExporting}
                 className="h-9 px-4 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-medium rounded-lg flex items-center space-x-2 transition-all duration-200 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
@@ -622,7 +727,7 @@ Check your browser console for more details.
                 <Download className="w-4 h-4" />
                 <span>{isExporting ? 'Exporting...' : 'CSV'}</span>
               </Button>
-              <Button 
+              <Button
                 onClick={() => handleExport('pdf')}
                 disabled={isExporting}
                 className="h-9 px-4 bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 text-white font-medium rounded-lg flex items-center space-x-2 transition-all duration-200 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
@@ -632,14 +737,14 @@ Check your browser console for more details.
               </Button>
             </div>
           </div>
-          
+
           <div className="mb-6">
             <div className="flex justify-between text-sm mb-1 text-gray-900 dark:text-gray-100">
               <span>Overall Budget Usage</span>
               <span>{Math.round(percentageUsed)}%</span>
             </div>
-            <ProgressBar 
-              value={Math.min(percentageUsed, 100)} 
+            <ProgressBar
+              value={Math.min(percentageUsed, 100)}
               className="h-3"
               indicatorClassName={percentageUsed > 100 ? 'bg-red-500' : 'bg-blue-500'}
             />
@@ -648,7 +753,7 @@ Check your browser console for more details.
               <span>₹{totalBudget.toLocaleString()}</span>
             </div>
           </div>
-          
+
           <h4 className="font-medium mb-3 text-gray-900 dark:text-white">By Category</h4>
           <div className="space-y-4 text-gray-900 dark:text-gray-100">
             {categories && categories.length > 0 ? (
@@ -657,7 +762,7 @@ Check your browser console for more details.
                 const budget = category.budget || 0;
                 const percentage = budget > 0 ? (spent / budget) * 100 : 0;
                 const isCategoryOverBudget = spent > budget;
-                
+
                 return (
                   <div key={category._id} className="space-y-2">
                     <div className="flex justify-between text-sm">
@@ -667,14 +772,14 @@ Check your browser console for more details.
                         {isCategoryOverBudget && ' (Over)'}
                       </span>
                     </div>
-                    <ProgressBar 
-                      value={Math.min(percentage, 100)} 
+                    <ProgressBar
+                      value={Math.min(percentage, 100)}
                       className="h-2"
                       indicatorClassName={
-                        percentage > 100 
-                          ? 'bg-red-500' 
-                          : percentage > 80 
-                            ? 'bg-yellow-500' 
+                        percentage > 100
+                          ? 'bg-red-500'
+                          : percentage > 80
+                            ? 'bg-yellow-500'
                             : 'bg-purple-500'
                       }
                     />
@@ -694,7 +799,7 @@ Check your browser console for more details.
   const renderReportContent = () => {
     if (isLoading) return renderLoading();
     if (error) return renderError();
-    
+
     switch (activeTab) {
       case REPORT_TYPES.SPENDING:
         return renderSpendingAnalysis();
@@ -710,12 +815,11 @@ Check your browser console for more details.
   // Render the tab navigation
   const renderTabs = () => (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-      <Card 
-        className={`p-4 cursor-pointer transition-all ${
-          activeTab === REPORT_TYPES.SPENDING 
-            ? 'ring-2 ring-blue-500 dark:ring-blue-600 shadow-lg transform -translate-y-1' 
-            : 'hover:shadow-md'
-        }`}
+      <Card
+        className={`p-4 cursor-pointer transition-all ${activeTab === REPORT_TYPES.SPENDING
+          ? 'ring-2 ring-blue-500 dark:ring-blue-600 shadow-lg transform -translate-y-1'
+          : 'hover:shadow-md'
+          }`}
         onClick={() => setActiveTab(REPORT_TYPES.SPENDING)}
       >
         <div className="flex items-center">
@@ -728,13 +832,12 @@ Check your browser console for more details.
           </div>
         </div>
       </Card>
-      
-      <Card 
-        className={`p-4 cursor-pointer transition-all ${
-          activeTab === REPORT_TYPES.INCOME 
-            ? 'ring-2 ring-green-500 dark:ring-green-600 shadow-lg transform -translate-y-1' 
-            : 'hover:shadow-md'
-        }`}
+
+      <Card
+        className={`p-4 cursor-pointer transition-all ${activeTab === REPORT_TYPES.INCOME
+          ? 'ring-2 ring-green-500 dark:ring-green-600 shadow-lg transform -translate-y-1'
+          : 'hover:shadow-md'
+          }`}
         onClick={() => setActiveTab(REPORT_TYPES.INCOME)}
       >
         <div className="flex items-center">
@@ -747,13 +850,12 @@ Check your browser console for more details.
           </div>
         </div>
       </Card>
-      
-      <Card 
-        className={`p-4 cursor-pointer transition-all ${
-          activeTab === REPORT_TYPES.BUDGET 
-            ? 'ring-2 ring-purple-500 dark:ring-purple-600 shadow-lg transform -translate-y-1' 
-            : 'hover:shadow-md'
-        }`}
+
+      <Card
+        className={`p-4 cursor-pointer transition-all ${activeTab === REPORT_TYPES.BUDGET
+          ? 'ring-2 ring-purple-500 dark:ring-purple-600 shadow-lg transform -translate-y-1'
+          : 'hover:shadow-md'
+          }`}
         onClick={() => setActiveTab(REPORT_TYPES.BUDGET)}
       >
         <div className="flex items-center">
@@ -778,11 +880,11 @@ Check your browser console for more details.
           Analyze your financial data and track your spending patterns
         </p>
       </div>
-      
+
       <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 w-full sm:w-auto">
         <div className="relative w-full sm:w-56">
-          <select 
-            value={dateRange} 
+          <select
+            value={dateRange}
             onChange={(e) => handleDateRangeChange(e.target.value)}
             className="w-full h-10 px-4 py-2 bg-white dark:bg-gray-700 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white font-medium focus:border-blue-500 dark:focus:border-blue-400 focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-900/50 appearance-none cursor-pointer transition-all duration-200 hover:border-gray-400 dark:hover:border-gray-500"
           >
@@ -798,7 +900,7 @@ Check your browser console for more details.
             </svg>
           </div>
         </div>
-        
+
         {showCustomDatePicker && (
           <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 w-full sm:w-auto">
             <input
@@ -818,7 +920,7 @@ Check your browser console for more details.
             />
           </div>
         )}
-        
+
         <Button
           onClick={fetchReportData}
           disabled={isLoading}
