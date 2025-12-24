@@ -1,5 +1,4 @@
 const { generateGeminiContent } = require('../services/geminiService');
-// ...existing code...
 
 const getGeminiResponse = async (req, res) => {
   try {
@@ -14,10 +13,6 @@ const getGeminiResponse = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
-
-// ...existing code...
-
-// Export controller functions at the end, after all declarations
 
 
 const Transaction = require('../models/Transaction');

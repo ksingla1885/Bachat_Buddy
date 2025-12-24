@@ -193,13 +193,13 @@ function Login() {
         </div>
         {/* OTP Modal */}
         {showOtpModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6">
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[100] p-4">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6 animate-fadeInUp">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Enter OTP</h3>
                 <button
                   onClick={() => setShowOtpModal(false)}
-                  className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
+                  className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors"
                 >
                   <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -215,6 +215,7 @@ function Login() {
                   className={`input-modern w-full ${otpError ? 'border-red-500' : ''}`}
                   placeholder="Enter OTP"
                   maxLength={6}
+                  autoFocus
                 />
                 {otpError && <p className="text-red-500 text-sm mt-1">{otpError}</p>}
                 <div className="flex space-x-3 mt-6">
