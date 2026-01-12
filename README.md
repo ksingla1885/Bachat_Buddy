@@ -71,6 +71,10 @@ A comprehensive personal finance management application built with the MERN stac
    cd ../frontend
    npm install
    ```
+4. Install all node_modules at once:
+  ```bash
+    npm install --prefix frontend && npm install --prefix backend
+  ```
 
 ## Configuration
 
