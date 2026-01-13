@@ -30,7 +30,7 @@ const app = express();
 
 // Configure CORS
 const corsOptions = {
-  origin: process.env.FRONTEND_URL || '*', // Allow configured frontend or all for dev/testing
+  origin: '*', // Allow all for now, or configure as needed
   credentials: true,
   optionsSuccessStatus: 200 // For legacy browser support
 };
