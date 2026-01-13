@@ -41,6 +41,9 @@ app.use(cors(corsOptions));
 app.use(morgan('dev'));
 
 // Routes
+app.get('/', (req, res) => {
+  res.send('Bachat Buddy API is running correctly');
+});
 app.use('/api/auth', authRoutes);
 app.use('/api/wallets', walletRoutes);
 app.use('/api/transactions', transactionRoutes);
