@@ -14,7 +14,7 @@
 // })
 // .then(() => {
 //   console.log('Connected to MongoDB');
-  
+
 //   // Seed database if in development
 //   if (process.env.NODE_ENV === 'development') {
 //     seedDatabase();
@@ -49,8 +49,8 @@ dotenv.config();
 const DB_URI = process.env.MONGODB_URI;
 
 if (!DB_URI) {
-  console.error("❌ Missing MONGODB_URI in .env file");
-  process.exit(1);
+  console.error("❌ Missing MONGODB_URI in .env file. Database features will fail.");
+  // process.exit(1); // Don't crash on Vercel immediately, let it run so we can see logs
 }
 
 mongoose

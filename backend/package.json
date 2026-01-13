@@ -23,7 +23,6 @@
     "nodemailer": "^7.0.10",
     "openai": "^6.14.0",
     "pdfkit": "^0.14.0",
-    "puppeteer": "^21.0.0",
     "winston": "^3.18.3"
   },
   "devDependencies": {
