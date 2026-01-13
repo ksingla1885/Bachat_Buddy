@@ -41,13 +41,13 @@ api.interceptors.response.use(
     }
 
     const { status } = error.response;
-    
+
     // Handle 401 Unauthorized
     if (status === 401) {
       // Clear auth data
       localStorage.removeItem('token');
       delete api.defaults.headers.common['Authorization'];
-      
+
       // Only redirect if not already on login/signup pages
       if (!['/login', '/signup', '/'].includes(window.location.pathname)) {
         toast.error('Your session has expired. Please log in again.');
@@ -59,7 +59,7 @@ api.interceptors.response.use(
       console.error('Server error:', error.response.data);
       toast.error('Server error. Please try again later.');
     }
-    
+
     // For other errors, just reject with the error
     return Promise.reject(error);
   }

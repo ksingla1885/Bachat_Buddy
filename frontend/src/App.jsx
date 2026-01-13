@@ -52,7 +52,7 @@ function AppLayout({ children, showNavbar = true, showContainer = true }) {
   const { user } = useAuth();
   // Set auth token for axios if user is logged in
   const { token } = useAuth();
-  
+
   useEffect(() => {
     if (token) {
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
@@ -67,7 +67,7 @@ function AppLayout({ children, showNavbar = true, showContainer = true }) {
       <div className="absolute inset-0 opacity-40" style={{
         backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%239C92AC' fill-opacity='0.05'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
       }}></div>
-      
+
       <div className="relative z-10">
         {showNavbar && <Navbar />}
         {user && <AIAssistant />}
@@ -85,182 +85,182 @@ function AppLayout({ children, showNavbar = true, showContainer = true }) {
 
 function App() {
   return (
-    <HistoryRouter 
+    <HistoryRouter
       history={history}
       future={routerConfig.future}
     >
       <ThemeProvider>
         <AuthProvider>
-            <Toaster
-              position="top-center"
-              gutter={12}
-              toastOptions={{
-                duration: 4500,
-                // Global style for toasts; each toast can still override
+          <Toaster
+            position="top-center"
+            gutter={12}
+            toastOptions={{
+              duration: 4500,
+              // Global style for toasts; each toast can still override
+              style: {
+                borderRadius: '12px',
+                background: '#ffffff',
+                color: '#0f172a',
+                boxShadow: '0 10px 30px rgba(2,6,23,0.15)',
+                width: 'min(720px, 92%)',
+                margin: '0 auto',
+                padding: '14px 18px',
+                border: '1px solid rgba(15,23,42,0.06)'
+              },
+              success: {
+                icon: '✅',
                 style: {
-                  borderRadius: '12px',
-                  background: '#ffffff',
-                  color: '#0f172a',
-                  boxShadow: '0 10px 30px rgba(2,6,23,0.15)',
-                  width: 'min(720px, 92%)',
-                  margin: '0 auto',
-                  padding: '14px 18px',
-                  border: '1px solid rgba(15,23,42,0.06)'
-                },
-                success: {
-                  icon: '✅',
-                  style: {
-                    borderLeft: '6px solid #10b981',
-                    background: '#f6fffb'
-                  }
-                },
-                error: {
-                  icon: '⚠️',
-                  style: {
-                    borderLeft: '6px solid #ef4444',
-                    background: '#fff5f5'
-                  }
+                  borderLeft: '6px solid #10b981',
+                  background: '#f6fffb'
                 }
-              }}
-            />
-            <Routes>
+              },
+              error: {
+                icon: '⚠️',
+                style: {
+                  borderLeft: '6px solid #ef4444',
+                  background: '#fff5f5'
+                }
+              }
+            }}
+          />
+          <Routes>
             {/* Public Routes */}
-            <Route 
-              path="/" 
+            <Route
+              path="/"
               element={
                 <AppLayout showNavbar={false} showContainer={false}>
                   <Landing />
                 </AppLayout>
-              } 
+              }
             />
-            <Route 
-              path="/login" 
+            <Route
+              path="/login"
               element={
                 <AppLayout showNavbar={true} showContainer={true}>
                   <Login />
                 </AppLayout>
-              } 
+              }
             />
-            <Route 
-              path="/signup" 
+            <Route
+              path="/signup"
               element={
                 <AppLayout showNavbar={true} showContainer={true}>
                   <Signup />
                 </AppLayout>
-              } 
+              }
             />
-            
+
             {/* Protected Routes */}
-            <Route 
-              path="/dashboard" 
+            <Route
+              path="/dashboard"
               element={
                 <ProtectedRoute>
                   <AppLayout showNavbar={true} showContainer={true}>
                     <Dashboard />
                   </AppLayout>
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/wallets" 
+            <Route
+              path="/wallets"
               element={
                 <ProtectedRoute>
                   <AppLayout showNavbar={true} showContainer={true}>
                     <Wallets />
                   </AppLayout>
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/transactions" 
+            <Route
+              path="/transactions"
               element={
                 <ProtectedRoute>
                   <AppLayout showNavbar={true} showContainer={true}>
                     <Transactions />
                   </AppLayout>
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/budgets" 
+            <Route
+              path="/budgets"
               element={
                 <ProtectedRoute>
                   <AppLayout showNavbar={true} showContainer={true}>
                     <Budgets />
                   </AppLayout>
                 </ProtectedRoute>
-              } 
+              }
             />
             {/* Phase 2 Routes */}
-            <Route 
-              path="/debts" 
+            <Route
+              path="/debts"
               element={
                 <ProtectedRoute>
                   <AppLayout showNavbar={true} showContainer={true}>
                     <DebtTracker />
                   </AppLayout>
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/goals" 
+            <Route
+              path="/goals"
               element={
                 <ProtectedRoute>
                   <AppLayout showNavbar={true} showContainer={true}>
                     <Goals />
                   </AppLayout>
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/reports" 
+            <Route
+              path="/reports"
               element={
                 <ProtectedRoute>
                   <AppLayout showNavbar={true} showContainer={true}>
                     <Reports />
                   </AppLayout>
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/achievements" 
+            <Route
+              path="/achievements"
               element={
                 <ProtectedRoute>
                   <AppLayout showNavbar={true} showContainer={true}>
                     <Achievements />
                   </AppLayout>
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/leaderboard" 
+            <Route
+              path="/leaderboard"
               element={
                 <ProtectedRoute>
                   <AppLayout showNavbar={true} showContainer={true}>
                     <Leaderboard />
                   </AppLayout>
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/profile" 
+            <Route
+              path="/profile"
               element={
                 <ProtectedRoute>
                   <AppLayout showNavbar={true} showContainer={true}>
                     <Profile />
                   </AppLayout>
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/points-info" 
+            <Route
+              path="/points-info"
               element={
                 <ProtectedRoute>
                   <AppLayout showNavbar={true} showContainer={true}>
                     <PointsInfoPage />
                   </AppLayout>
                 </ProtectedRoute>
-              } 
+              }
             />
           </Routes>
         </AuthProvider>
