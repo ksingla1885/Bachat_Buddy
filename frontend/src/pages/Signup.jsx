@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { useAuth } from '../contexts/AuthContext';
+import { toast } from 'react-hot-toast';
 import api from '../services/api';
 
 function Signup() {
@@ -12,9 +13,9 @@ function Signup() {
   const [otp, setOtp] = useState('');
   const [otpError, setOtpError] = useState('');
   const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
-  const { signup } = useAuth();
+  const { signup, loginSuccess } = useAuth();
   const navigate = useNavigate();
-  
+
   const { register, handleSubmit, watch, formState: { errors } } = useForm();
   const password = watch('password');
 
@@ -48,14 +49,21 @@ function Signup() {
       setIsVerifyingOtp(true);
       setOtpError('');
       // Step 2: Verify OTP and complete signup
-      await api.post('/auth/signup/verify-otp', {
+      // Step 2: Verify OTP and complete signup
+      const response = await api.post('/auth/signup/verify-otp', {
         name: formData.name,
         email: formData.email,
         password: formData.password,
         otp: otp
       });
-      // Now login with the verified account
-      await signup(formData.name, formData.email, formData.password);
+
+      // Get token and user from response
+      const { token, user } = response.data.data;
+
+      // Login directly with the received token and user
+      loginSuccess(user, token);
+
+      toast.success('Account created successfully!');
       navigate('/dashboard');
     } catch (error) {
       setOtpError(error.response?.data?.message || 'Invalid OTP. Please try again.');
@@ -98,7 +106,7 @@ function Signup() {
                   </div>
                 </div>
               )}
-              
+
               <div className="space-y-4">
                 <div>
                   <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -126,7 +134,7 @@ function Signup() {
                     </p>
                   )}
                 </div>
-                
+
                 <div>
                   <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     📧 Email Address
@@ -153,7 +161,7 @@ function Signup() {
                     </p>
                   )}
                 </div>
-                
+
                 <div>
                   <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     🔒 Password
@@ -180,7 +188,7 @@ function Signup() {
                     </p>
                   )}
                 </div>
-                
+
                 <div>
                   <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     🔐 Confirm Password

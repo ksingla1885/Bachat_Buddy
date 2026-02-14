@@ -255,6 +255,13 @@ export function AuthProvider({ children }) {
     signup,
     logout,
     updateUser,
+    updateUser,
+    loginSuccess: (user, token) => {
+      localStorage.setItem('token', token);
+      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      setUser(user);
+      setError(null);
+    },
     isAuthenticated: !!user
   };
 
