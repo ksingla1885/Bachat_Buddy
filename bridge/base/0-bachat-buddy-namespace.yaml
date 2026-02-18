@@ -1,0 +1,8 @@
+#! 0-bachat-buddy-namespace.yaml
+# Generated code, do not edit
+apiVersion: v1
+kind: Namespace
+metadata:
+    name: bachat-buddy
+    labels:
+        com.docker.compose.project: bachat_buddy

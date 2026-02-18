@@ -1,0 +1,56 @@
+#! backend-deployment.yaml
+# Generated code, do not edit
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+    name: backend
+    namespace: bachat-buddy
+    labels:
+        com.docker.compose.project: bachat_buddy
+        com.docker.compose.service: backend
+spec:
+    replicas: 1
+    selector:
+        matchLabels:
+            com.docker.compose.project: bachat_buddy
+            com.docker.compose.service: backend
+    strategy:
+        type: Recreate
+    template:
+        metadata:
+            labels:
+                com.docker.compose.project: bachat_buddy
+                com.docker.compose.service: backend
+                com.docker.compose.network.default: "true"
+        spec:
+            restartPolicy: unless-stopped
+            containers:
+                - name: bachat-buddy-backend
+                  image: bachat-buddy-backend
+                  imagePullPolicy: IfNotPresent
+                  env:
+                    - name: GEMINI_API_ENDPOINT
+                      value: "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
+                    - name: GEMINI_API_KEY
+                      value: "AIzaSyD2d1vHtMx8vfAdycLLqRkpNqWuPf9ucVE"
+                    - name: JWT_SECRET
+                      value: "bachatbuddy-dev-secret-key"
+                    - name: MONGODB_URI
+                      value: "mongodb+srv://ketansingla3246:bachatbuddy@bachatbuddy.ftihe28.mongodb.net/"
+                    - name: NODE_ENV
+                      value: "production"
+                    - name: PORT
+                      value: "5001"
+                    - name: SMTP_HOST
+                      value: "smtp.gmail.com"
+                    - name: SMTP_PASS
+                      value: "ucyf gykk qqtc yaiu"
+                    - name: SMTP_SECURE
+                      value: "false"
+                    - name: SMTP_SERVICE
+                      value: "gmail"
+                    - name: SMTP_USER
+                      value: "heyketankumar@gmail.com"
+                  ports:
+                    - name: backend-5001
+                      containerPort: 5001

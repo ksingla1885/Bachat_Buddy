@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  frontend:
+    build:
+      context: ./frontend
+      # Pass the API URL to be baked into the static files
+      args:
+        VITE_API_URL: /api
+    image: bachat-buddy-frontend
+    container_name: bachat-buddy-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+
+  backend:
+    build:
+      context: ./backend
+    image: bachat-buddy-backend
+    container_name: bachat-buddy-backend
+    restart: unless-stopped
+    # Load environment variables from the existing backend .env file
+    env_file:
+      - ./backend/.env
+    # Override/Appends: You can add overrides here
+    environment:
+      - PORT=5001
+      # If you use the mongo service below, uncomment this:
+      # - MONGODB_URI=mongodb://mongo:27017/bachat_buddy
+    ports:
+      - "5001:5001"
+    # If using local mongo service:
+    # depends_on:
+    #   - mongo
+
+    # Optional: Local MongoDB service
+    # Uncomment the following lines to run a local MongoDB instance
+    # mongo:
+    #   image: mongo:latest
+    #   container_name: bachat-buddy-mongo
+    #   restart: unless-stopped
+    #   ports:
+    #     - "27017:27017"
+    #   volumes:
+    #     - mongo-data:/data/db
+
+    # volumes:
+    #   mongo-data:
