@@ -34,6 +34,19 @@ A premium, full-stack personal finance management application designed to give y
 
 BachatBuddy follows a decoupled, multi-tier architecture designed for scalability and performance.
 
+```mermaid
+graph TD
+    User((Personal Finance User)) --> Frontend[React + Vite + Tailwind]
+    Frontend -->|API Requests| Backend[Express + Node.js]
+    Backend -->|Auth| JWT[JWT + Bcrypt]
+    Backend -->|ODM| Mongoose[Mongoose ODM]
+    Mongoose -->|Query| DB[(MongoDB Atlas)]
+    Backend -->|Automation| Cron[node-cron Schedulers]
+    Backend -->|Intelligence| AI[Google Gemini AI]
+    Backend -->|Files| Storage[Local/Cloud PDF Exports]
+```
+
+
 ### 🌓 Frontend (Client Side)
 - **Engine**: **React.js** (Vite) for a blazing-fast user experience.
 - **Styling**: **Tailwind CSS** with custom **Glassmorphism** utilities.
