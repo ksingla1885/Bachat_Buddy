@@ -26,7 +26,7 @@ A premium, full-stack personal finance management application designed to give y
 ### 🤖 AI & Automation
 - **AI Financial Insights**: Get smart recommendations for your spending habits (Powered by Google Gemini).
 - **Recurring Transactions**: Set rules for automated transaction entry (Daily, Weekly, Monthly).
-- **Email Alerts**: Automated notifications for budget thresholds and scheduled tasks.
+- **Email Alerts**: Automated notifications for budget thresholds.
 
 ---
 
@@ -41,7 +41,6 @@ graph TD
     Backend -->|Auth| JWT[JWT + Bcrypt]
     Backend -->|ODM| Mongoose[Mongoose ODM]
     Mongoose -->|Query| DB[(MongoDB Atlas)]
-    Backend -->|Automation| Cron[node-cron Schedulers]
     Backend -->|Intelligence| AI[Google Gemini AI]
     Backend -->|Files| Storage[Local/Cloud PDF Exports]
 ```
